@@ -1,0 +1,265 @@
+{
+  "brand": "OperBlock",
+  "workspace": "PINE Group",
+  "nav": {
+    "dashboard": "Дашборд",
+    "myTasks": "Мои задачи",
+    "inbox": "Входящие",
+    "goals": "Цели",
+    "reports": "Отчёты",
+    "projects": "Проекты",
+    "settings": "Настройки"
+  },
+  "common": {
+    "loading": "Загрузка…",
+    "cancel": "Отмена",
+    "save": "Сохранить",
+    "delete": "Удалить",
+    "edit": "Редактировать",
+    "add": "Добавить",
+    "search": "Поиск",
+    "filter": "Фильтр",
+    "members": "Участники",
+    "all": "Все",
+    "none": "Нет",
+    "unknown": "Неизвестно",
+    "user": "Пользователь",
+    "syncing": "синхронизация…",
+    "refresh": "Обновите страницу",
+    "projects": "Проекты",
+    "language": "Язык"
+  },
+  "status": {
+    "backlog": "Бэклог",
+    "todo": "К выполнению",
+    "in_progress": "В работе",
+    "in_review": "На проверке",
+    "done": "Готово"
+  },
+  "priority": {
+    "all": "Все приоритеты",
+    "low": "Низкий",
+    "medium": "Средний",
+    "high": "Высокий",
+    "none": "Не указан",
+    "unspecified": "Не указан"
+  },
+  "views": {
+    "overview": "Обзор",
+    "list": "Список",
+    "board": "Доска",
+    "timeline": "Сроки",
+    "files": "Файлы"
+  },
+  "landing": {
+    "tagline": "Управление проектами по-новому",
+    "heroTitle": "Управляйте проектами с полной ясностью.",
+    "heroSubtitle": "OperBlock объединяет команду, задачи и сроки в одном спокойном рабочем пространстве.",
+    "getStarted": "Начать",
+    "logIn": "Войти",
+    "boardPreview": "OperBlock — вид доски",
+    "previewTodo": "К выполнению",
+    "previewInProgress": "В работе",
+    "previewDone": "Готово",
+    "featureKanbanTitle": "Канбан-доски",
+    "featureKanbanDesc": "Визуализируйте рабочий процесс с колонками перетаскивания под вашу команду.",
+    "featureTeamTitle": "Командная работа",
+    "featureTeamDesc": "Назначайте задачи, оставляйте комментарии и держите всех в курсе.",
+    "featureScaleTitle": "Готовность к росту",
+    "featureScaleDesc": "От личных проектов до корпоративных рабочих пространств — без трения.",
+    "footerTagline": "Создано для команд, которые выпускают продукт."
+  },
+  "auth": {
+    "signInTitle": "Вход в OperBlock",
+    "signUpTitle": "Регистрация в OperBlock"
+  },
+  "projects": {
+    "breadcrumb": "Проекты / {{name}}",
+    "defaultName": "Project Nova",
+    "searchPlaceholder": "Поиск задач…",
+    "addTask": "Добавить задачу",
+    "loadingTasks": "Загрузка задач…",
+    "loadError": "Не удалось загрузить задачи. Обновите страницу.",
+    "deleteConfirm": "Удалить «{{title}}»?"
+  },
+  "tasks": {
+    "addTask": "Добавить задачу",
+    "editTask": "Редактировать задачу",
+    "title": "Название",
+    "titlePlaceholder": "Название задачи",
+    "description": "Описание",
+    "descriptionPlaceholder": "Необязательное описание",
+    "status": "Статус",
+    "priority": "Приоритет",
+    "dueDate": "Срок",
+    "dueDatePlaceholder": "напр. 25 июл или 2026-07-25",
+    "assignToMe": "Назначить на меня",
+    "saving": "Сохранение…",
+    "saveChanges": "Сохранить изменения",
+    "createTask": "Создать задачу",
+    "noDueDate": "Без срока",
+    "created": "Задача создана",
+    "deleted": "Задача удалена",
+    "requestFailed": "Запрос не выполнен",
+    "somethingWrong": "Что-то пошло не так"
+  },
+  "list": {
+    "title": "Название",
+    "status": "Статус",
+    "priority": "Приоритет",
+    "dueDate": "Срок",
+    "actions": "Действия",
+    "empty": "Задач не найдено",
+    "noFilters": "Нет задач по фильтрам"
+  },
+  "board": {
+    "noTasks": "Нет задач"
+  },
+  "overview": {
+    "projectTitle": "Обзор проекта",
+    "workspaceTitle": "Обзор рабочего пространства",
+    "workspace": "Рабочее пространство",
+    "dashboard": "Дашборд",
+    "loadingStats": "Загрузка статистики…",
+    "loadError": "Не удалось загрузить данные дашборда",
+    "totalTasks": "Всего задач",
+    "completion": "Выполнено",
+    "doneCount": "{{count}} готово",
+    "overdue": "Просрочено",
+    "inProgress": "В работе",
+    "byStatus": "Задачи по статусу"
+  },
+  "timeline": {
+    "empty": "Нет задач с указанным сроком",
+    "noTasks": "Нет задач для отображения на сроках",
+    "overdue": "Просрочено"
+  },
+  "files": {
+    "title": "Файлы",
+    "comingSoon": "Загрузка файлов скоро появится",
+    "comingSoonTitle": "Файлы скоро",
+    "description": "Здесь будут документы и вложения проекта.",
+    "comingSoonDesc": "Вложения и обмен документами появятся в будущем обновлении. Пока управляйте задачами на доске и в списке."
+  },
+  "inbox": {
+    "title": "Входящие",
+    "subtitle": "Задачи на проверке",
+    "reviewQueue": "Очередь проверки",
+    "empty": "Нет задач на проверке",
+    "clear": "Входящие пусты",
+    "clearDesc": "Задачи со статусом «На проверке» появляются здесь для быстрой обработки.",
+    "loading": "Загрузка входящих…",
+    "loadError": "Не удалось загрузить входящие"
+  },
+  "myTasks": {
+    "title": "Мои задачи",
+    "subtitle": "Задачи",
+    "assignedSubtitle": "Назначенные вам задачи",
+    "allNote": "Показаны все задачи — назначьте задачи себе для фильтрации.",
+    "assignedCount": "{{count}} задач назначено вам",
+    "empty": "Нет назначенных задач",
+    "loading": "Загрузка задач…",
+    "loadError": "Не удалось загрузить задачи"
+  },
+  "goals": {
+    "title": "Цели",
+    "objectives": "Цели",
+    "subtitle": "Квартальные цели на основе данных отчётов.",
+    "quarterCompleted": "{{label}}: выполнено {{count}} задач",
+    "viewReports": "Полный отчёт →",
+    "loadingStats": "Загрузка квартальной статистики…",
+    "complete": "{{percent}}% выполнено",
+    "items": {
+      "launch": {
+        "title": "Запуск MVP Q3",
+        "status": "По плану"
+      },
+      "onboarding": {
+        "title": "Снизить отток при онбординге на 20%",
+        "status": "В процессе"
+      },
+      "security": {
+        "title": "Завершить устранение замечаний аудита",
+        "status": "Почти готово"
+      }
+    }
+  },
+  "reports": {
+    "title": "Отчёты",
+    "subtitle": "Аналитика",
+    "workCompleted": "Выполненная работа",
+    "loading": "Загрузка отчёта…",
+    "loadError": "Не удалось загрузить отчёт",
+    "period": {
+      "week": "Неделя",
+      "month": "Месяц",
+      "quarter": "Квартал",
+      "year": "Год"
+    },
+    "allProjects": "Все проекты",
+    "completed": "Выполнено",
+    "created": "Создано",
+    "velocity": "Скорость",
+    "cycleTime": "Цикл",
+    "avgPerDay": "В среднем в день",
+    "avgPerWeek": "В среднем в неделю",
+    "totalInPeriod": "Всего за период",
+    "newInPeriod": "Новых за период",
+    "throughput": "Пропускная способность",
+    "noCompletions": "Нет завершений за этот период",
+    "byAssignee": "По исполнителю",
+    "byPriority": "По приоритету",
+    "byProject": "По проекту",
+    "noAssigneeData": "Нет данных по исполнителям",
+    "noPriorityData": "Нет данных по приоритетам",
+    "noProjectData": "Нет данных по проектам",
+    "completedTasks": "Завершённые задачи",
+    "noCompletedInPeriod": "За период {{label}} задачи не завершены.",
+    "tableId": "ID",
+    "tableTitle": "Название",
+    "tablePriority": "Приоритет",
+    "tableCompleted": "Завершено",
+    "unassigned": "Не назначено",
+    "noChange": "Без изменений",
+    "vsPrior": "{{value}} к прошлому периоду",
+    "noPriorData": "Нет данных за прошлый период"
+  },
+  "settings": {
+    "title": "Настройки",
+    "account": "Аккаунт",
+    "profile": "Профиль",
+    "accountManagement": "Управление аккаунтом",
+    "accountDesc": "Управляйте паролем, подключёнными аккаунтами и безопасностью через Clerk.",
+    "openPortal": "Открыть портал аккаунта",
+    "about": "Об OperBlock",
+    "aboutDesc": "Внутренний инструмент управления проектами — v0.1.0",
+    "languageDesc": "Выберите язык интерфейса приложения."
+  },
+  "members": {
+    "title": "Участники",
+    "you": "Вы",
+    "inviteSoon": "Пригласить команду (скоро)"
+  },
+  "notifications": {
+    "title": "Уведомления",
+    "empty": "Нет уведомлений"
+  },
+  "tags": {
+    "design": "Дизайн",
+    "marketing": "Маркетинг",
+    "engineering": "Разработка",
+    "planning": "Планирование",
+    "research": "Исследование",
+    "docs": "Документация",
+    "devops": "DevOps",
+    "product": "Продукт",
+    "ux": "UX",
+    "security": "Безопасность"
+  },
+  "previewTasks": {
+    "designAudit": "Аудит дизайн-системы",
+    "updateCopy": "Обновить текст лендинга",
+    "buildKanban": "Собрать канбан-доску",
+    "kickoff": "Старт проекта"
+  }
+}

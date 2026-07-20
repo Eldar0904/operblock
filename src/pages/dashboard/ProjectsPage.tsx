@@ -1,0 +1,232 @@
+import { useMemo, useState } from "react";
+import { Plus, Search } from "lucide-react";
+import { useSearchParams, useOutletContext } from "react-router-dom";
+import { useAuth, UserButton } from "@clerk/clerk-react";
+import { useTranslation } from "react-i18next";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import {
+  useTasks,
+  useCreateTask,
+  useUpdateTask,
+  useUpdateTaskStatus,
+  useDeleteTask,
+} from "@/hooks/useTasks";
+import type { ApiTask, Priority, TaskStatus } from "@/lib/mock-data";
+import { filterTasks } from "@/lib/task-utils";
+import { BoardView } from "@/components/dashboard/BoardView";
+import { ListView } from "@/components/dashboard/ListView";
+import { OverviewView } from "@/components/dashboard/OverviewView";
+import { TimelineView } from "@/components/dashboard/TimelineView";
+import { FilesView } from "@/components/dashboard/FilesView";
+import { TaskModal, type TaskFormData } from "@/components/dashboard/TaskModal";
+import { NotificationsDropdown } from "@/components/dashboard/NotificationsDropdown";
+import { MembersDropdown } from "@/components/dashboard/MembersDropdown";
+import { PriorityFilter } from "@/components/dashboard/PriorityFilter";
+import type { DashboardOutletContext } from "@/pages/dashboard/DashboardLayout";
+
+const VIEW_TAB_KEYS = ["overview", "list", "board", "timeline", "files"] as const;
+type ViewTabKey = (typeof VIEW_TAB_KEYS)[number];
+
+function paramToView(param: string | null): ViewTabKey {
+  const match = VIEW_TAB_KEYS.find((v) => v === param?.toLowerCase());
+  return match ?? "board";
+}
+
+export default function ProjectsPage() {
+  const { t } = useTranslation();
+  const { activeProject } = useOutletContext<DashboardOutletContext>();
+  const { userId } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeView = paramToView(searchParams.get("view"));
+
+  const { data: tasks = [], isLoading, isFetching, isError } = useTasks(activeProject?.id);
+  const createTask = useCreateTask();
+  const updateTask = useUpdateTask();
+  const updateStatus = useUpdateTaskStatus();
+  const deleteTask = useDeleteTask();
+
+  const [search, setSearch] = useState("");
+  const [priorityFilter, setPriorityFilter] = useState<Priority | "all">("all");
+  const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null);
+  const [dropTarget, setDropTarget] = useState<TaskStatus | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<ApiTask | null>(null);
+  const [defaultStatus, setDefaultStatus] = useState<TaskStatus>("todo");
+
+  const filteredTasks = useMemo(
+    () => filterTasks(tasks, { search, priority: priorityFilter }),
+    [tasks, search, priorityFilter],
+  );
+
+  const setView = (view: ViewTabKey) => {
+    setSearchParams({ view }, { replace: true });
+  };
+
+  const openAddModal = (status: TaskStatus = "todo") => {
+    setEditingTask(null);
+    setDefaultStatus(status);
+    setModalOpen(true);
+  };
+
+  const openEditModal = (task: ApiTask) => {
+    setEditingTask(task);
+    setModalOpen(true);
+  };
+
+  const handleModalSubmit = (form: TaskFormData) => {
+    const assigneeUserId = form.assignToMe && userId ? userId : null;
+
+    if (editingTask) {
+      updateTask.mutate(
+        {
+          id: editingTask.id,
+          title: form.title.trim(),
+          description: form.description || null,
+          status: form.status,
+          priority: form.priority || null,
+          dueDate: form.dueDate || null,
+          assigneeUserId,
+        },
+        { onSuccess: () => setModalOpen(false) },
+      );
+    } else if (activeProject) {
+      createTask.mutate(
+        {
+          projectId: activeProject.id,
+          title: form.title.trim(),
+          description: form.description || undefined,
+          status: form.status || defaultStatus,
+          priority: form.priority || undefined,
+          dueDate: form.dueDate || undefined,
+          assigneeUserId: assigneeUserId ?? undefined,
+        },
+        { onSuccess: () => setModalOpen(false) },
+      );
+    }
+  };
+
+  const handleDelete = (task: ApiTask) => {
+    if (window.confirm(t("projects.deleteConfirm", { title: task.title }))) {
+      deleteTask.mutate(task.id);
+    }
+  };
+
+  const handleDrop = (status: TaskStatus) => {
+    if (!draggingTaskId) return;
+    const task = tasks.find((t) => t.id === draggingTaskId);
+    if (task && task.status !== status) {
+      updateStatus.mutate({ id: draggingTaskId, status });
+    }
+    setDraggingTaskId(null);
+    setDropTarget(null);
+  };
+
+  const isSubmitting = createTask.isPending || updateTask.isPending;
+
+  return (
+    <>
+      <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-background px-6">
+        <div>
+          <p className="text-xs text-muted-foreground">
+            {t("projects.breadcrumb", { name: activeProject?.name ?? t("common.loading") })}
+          </p>
+          <h1 className="text-base font-semibold">
+            {activeProject?.name ?? t("projects.defaultName")}
+            {isFetching && (
+              <span className="ml-2 text-xs font-normal text-muted-foreground">{t("common.syncing")}</span>
+            )}
+          </h1>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="relative hidden sm:block">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={t("projects.searchPlaceholder")}
+              className="h-9 w-64 rounded-md border border-input bg-background pl-9 pr-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+            />
+          </div>
+          <NotificationsDropdown />
+          <UserButton appearance={{ elements: { avatarBox: "h-7 w-7" } }} />
+        </div>
+      </header>
+
+      <div className="flex items-center justify-between border-b border-border bg-background px-6">
+        <div className="flex gap-1">
+          {VIEW_TAB_KEYS.map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setView(tab)}
+              className={cn(
+                "border-b-2 px-3 py-3 text-sm font-medium transition-colors",
+                activeView === tab
+                  ? "border-indigo-600 text-indigo-600"
+                  : "border-transparent text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {t(`views.${tab}`)}
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center gap-2 py-2">
+          <PriorityFilter value={priorityFilter} onChange={setPriorityFilter} />
+          <MembersDropdown />
+          <Button
+            size="sm"
+            className="bg-indigo-600 hover:bg-indigo-700"
+            onClick={() => openAddModal()}
+          >
+            <Plus className="h-3.5 w-3.5" />
+            {t("projects.addTask")}
+          </Button>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-auto p-6">
+        {isLoading ? (
+          <div className="flex h-full items-center justify-center">
+            <p className="text-sm text-muted-foreground">{t("projects.loadingTasks")}</p>
+          </div>
+        ) : isError ? (
+          <div className="flex h-full items-center justify-center">
+            <p className="text-sm text-red-600">{t("projects.loadError")}</p>
+          </div>
+        ) : activeView === "board" ? (
+          <div className="h-full min-h-[400px] overflow-x-auto">
+            <BoardView
+              tasks={filteredTasks}
+              onDragStart={setDraggingTaskId}
+              onDrop={handleDrop}
+              dropTarget={dropTarget}
+              setDropTarget={setDropTarget}
+              onEdit={openEditModal}
+              onDelete={handleDelete}
+              onAddToColumn={openAddModal}
+            />
+          </div>
+        ) : activeView === "list" ? (
+          <ListView tasks={filteredTasks} onEdit={openEditModal} onDelete={handleDelete} />
+        ) : activeView === "overview" ? (
+          <OverviewView tasks={filteredTasks} title={t("overview.projectTitle")} />
+        ) : activeView === "timeline" ? (
+          <TimelineView tasks={filteredTasks} onEdit={openEditModal} />
+        ) : (
+          <FilesView />
+        )}
+      </div>
+
+      <TaskModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSubmit={handleModalSubmit}
+        task={editingTask}
+        defaultStatus={defaultStatus}
+        isSubmitting={isSubmitting}
+        currentUserId={userId ?? undefined}
+      />
+    </>
+  );
+}

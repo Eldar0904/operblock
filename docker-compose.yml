@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: operblock-db
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: operblock
+      POSTGRES_PASSWORD: operblock
+      POSTGRES_DB: operblock
+    volumes:
+      - operblock_pgdata:/var/lib/postgresql/data
+
+volumes:
+  operblock_pgdata:

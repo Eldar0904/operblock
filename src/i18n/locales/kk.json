@@ -1,0 +1,266 @@
+{
+  "brand": "OperBlock",
+  "workspace": "PINE Group",
+  "nav": {
+    "dashboard": "Басты бет",
+    "myTasks": "Менің тапсырмаларым",
+    "inbox": "Кірістер",
+    "goals": "Мақсаттар",
+    "reports": "Есептер",
+    "projects": "Жобалар",
+    "settings": "Баптаулар"
+  },
+  "common": {
+    "loading": "Жүктелуде…",
+    "cancel": "Болдырмау",
+    "save": "Сақтау",
+    "delete": "Жою",
+    "edit": "Өңдеу",
+    "add": "Қосу",
+    "search": "Іздеу",
+    "filter": "Сүзгі",
+    "members": "Қатысушылар",
+    "all": "Барлығы",
+    "none": "Жоқ",
+    "unknown": "Белгісіз",
+    "user": "Пайдаланушы",
+    "syncing": "синхрондауда…",
+    "refresh": "Бетті жаңартыңыз",
+    "projects": "Жобалар",
+    "language": "Тіл"
+  },
+  "status": {
+    "backlog": "Кезек",
+    "todo": "Орындауға",
+    "in_progress": "Орындалуда",
+    "in_review": "Тексеруде",
+    "done": "Дайын"
+  },
+  "priority": {
+    "all": "Барлық басымдық",
+    "low": "Төмен",
+    "medium": "Орташа",
+    "high": "Жоғары",
+    "none": "Көрсетілмеген",
+    "unspecified": "Көрсетілмеген"
+  },
+  "views": {
+    "overview": "Шолу",
+    "list": "Тізім",
+    "board": "Тақта",
+    "timeline": "Мерзімдер",
+    "files": "Файлдар"
+  },
+  "landing": {
+    "tagline": "Жобаларды басқару — жаңа деңгейде",
+    "heroTitle": "Жобаларыңызды нақты басқарыңыз.",
+    "heroSubtitle": "OperBlock командаңызды, тапсырмаларыңызды және мерзімдерді бір тыныш ортада біріктіреді.",
+    "getStarted": "Бастау",
+    "logIn": "Кіру",
+    "boardPreview": "OperBlock — тақта көрінісі",
+    "previewTodo": "Орындауға",
+    "previewInProgress": "Орындалуда",
+    "previewDone": "Дайын",
+    "featureKanbanTitle": "Канбан тақталар",
+    "featureKanbanDesc": "Командаңызға сай сүйреп апару арқылы жұмыс ағынын көрсетіңіз.",
+    "featureTeamTitle": "Командалық жұмыс",
+    "featureTeamDesc": "Тапсырмаларды тағайындаңыз, пікір қалдырыңыз, барлығын үйлестіріңіз.",
+    "featureScaleTitle": "Өсуге дайын",
+    "featureScaleDesc": "Жеке жобалардан корпоративтік ортаға дейін — кедергісіз.",
+    "footerTagline": "Өнім шығаратын командалар үшін жасалған."
+  },
+  "auth": {
+    "signInTitle": "OperBlock-ке кіру",
+    "signUpTitle": "OperBlock-ке тіркелу"
+  },
+  "projects": {
+    "breadcrumb": "Жобалар / {{name}}",
+    "defaultName": "Project Nova",
+    "searchPlaceholder": "Тапсырмаларды іздеу…",
+    "addTask": "Тапсырма қосу",
+    "loadingTasks": "Тапсырмалар жүктелуде…",
+    "loadError": "Тапсырмалар жүктелмedi. Бетті жаңартыңыз.",
+    "deleteConfirm": "«{{title}}» жою керек пе?"
+  },
+  "tasks": {
+    "addTask": "Тапсырма қосу",
+    "editTask": "Тапсырманы өңдеу",
+    "title": "Атауы",
+    "titlePlaceholder": "Тапсырма атауы",
+    "description": "Сипаттама",
+    "descriptionPlaceholder": "Қосымша сипаттама",
+    "status": "Күйі",
+    "priority": "Басымдық",
+    "dueDate": "Мерзім",
+    "dueDatePlaceholder": "мыс. 25 шіл или 2026-07-25",
+    "assignToMe": "Маған тағайындау",
+    "saving": "Сақталуда…",
+    "saveChanges": "Өзгерістерді сақтау",
+    "createTask": "Тапсырма жасау",
+    "noDueDate": "Мерзімсіз",
+    "created": "Тапсырма жасалды",
+    "deleted": "Тапсырма жойылды",
+    "requestFailed": "Сұрау орындалмады",
+    "somethingWrong": "Бір нәрсе дұрыс болмады"
+  },
+  "list": {
+    "title": "Атауы",
+    "status": "Күйі",
+    "priority": "Басымдық",
+    "dueDate": "Мерзім",
+    "actions": "Әрекеттер",
+    "empty": "Тапсырма табылмады",
+    "noFilters": "Сүзгілерге сәйкес тапсырма жоқ"
+  },
+  "board": {
+    "noTasks": "Тапсырма жоқ"
+  },
+  "overview": {
+    "projectTitle": "Жоба шолуы",
+    "workspaceTitle": "Жұмыс орны шолуы",
+    "workspace": "Жұмыс орны",
+    "dashboard": "Басты бет",
+    "loadingStats": "Статистика жүктелуде…",
+    "loadError": "Басты бет деректері жүктелмedi",
+    "totalTasks": "Барлық тапсырма",
+    "completion": "Орындалды",
+    "doneCount": "{{count}} дайын",
+    "overdue": "Мерзімі өткен",
+    "inProgress": "Орындалуда",
+    "byStatus": "Күйі бойынша",
+    "loadingStats": "Статистика жүктелуде…"
+  },
+  "timeline": {
+    "empty": "Мерзімі бар тапсырма жоқ",
+    "noTasks": "Мерзімдерде көрсетуге тапсырма жоқ",
+    "overdue": "Мерзімі өткен"
+  },
+  "files": {
+    "title": "Файлдар",
+    "comingSoon": "Файл жүктеу жақында",
+    "comingSoonTitle": "Файлдар жақында",
+    "description": "Мұнда жоба құжаттары мен тіркемелер болады.",
+    "comingSoonDesc": "Тіркемелер мен құжат алмасу келесі жаңартуда пайда болады. Қазір тапсырмаларды тақта мен тізімнен басқарыңыз."
+  },
+  "inbox": {
+    "title": "Кірістер",
+    "subtitle": "Тексерудегі тапсырмалар",
+    "reviewQueue": "Тексеру кезегі",
+    "empty": "Тексерудегі тапсырма жоқ",
+    "clear": "Кірістер бос",
+    "clearDesc": "«Тексеруде» күйіндегі тапсырмалар осы жерде жылдам өңдеу үшін көрсетіледі.",
+    "loading": "Кірістер жүктелуде…",
+    "loadError": "Кірістер жүктелмedi"
+  },
+  "myTasks": {
+    "title": "Менің тапсырмаларым",
+    "subtitle": "Тапсырмалар",
+    "assignedSubtitle": "Сізге тағайындалған тапсырмалар",
+    "allNote": "Барлық тапсырмалар көрсетілуде — иелік бойынша сүзу үшін өзіңізге тағайындаңыз.",
+    "assignedCount": "Сізге {{count}} тапсырма тағайындалған",
+    "empty": "Тағайындалған тапсырма жоқ",
+    "loading": "Тапсырмалар жүктелуде…",
+    "loadError": "Тапсырмалар жүктелмedi"
+  },
+  "goals": {
+    "title": "Мақсаттар",
+    "objectives": "Мақсаттар",
+    "subtitle": "Есеп деректеріне негізделген тоқсандық мақсаттар.",
+    "quarterCompleted": "{{label}}: {{count}} тапсырма орындалды",
+    "viewReports": "Толық есеп →",
+    "loadingStats": "Тоқсандық статистика жүктелуде…",
+    "complete": "{{percent}}% орындалды",
+    "items": {
+      "launch": {
+        "title": "Q3 MVP іске қосу",
+        "status": "Жоспар бойынша"
+      },
+      "onboarding": {
+        "title": "Онбордингтен кету 20%-ға азайту",
+        "status": "Орындалуда"
+      },
+      "security": {
+        "title": "Аудит ескертулерін жоюды аяқтау",
+        "status": "Дайындалуда"
+      }
+    }
+  },
+  "reports": {
+    "title": "Есептер",
+    "subtitle": "Аналитика",
+    "workCompleted": "Орындалған жұмыс",
+    "loading": "Есеп жүктелуде…",
+    "loadError": "Есеп жүктелмedi",
+    "period": {
+      "week": "Апта",
+      "month": "Ай",
+      "quarter": "Тоқсан",
+      "year": "Жыл"
+    },
+    "allProjects": "Барлық жоба",
+    "completed": "Орындалды",
+    "created": "Жасалды",
+    "velocity": "Жылдамдық",
+    "cycleTime": "Цикл",
+    "avgPerDay": "Күніне орташа",
+    "avgPerWeek": "Аптада орташа",
+    "totalInPeriod": "Кезең ішінде барлығы",
+    "newInPeriod": "Кезеңде жаңа",
+    "throughput": "Өнімділік",
+    "noCompletions": "Бұл кезеңде аяқталған жоқ",
+    "byAssignee": "Орындаушы бойынша",
+    "byPriority": "Басымдық бойынша",
+    "byProject": "Жоба бойынша",
+    "noAssigneeData": "Орындаушы деректері жоқ",
+    "noPriorityData": "Басымдық деректері жоқ",
+    "noProjectData": "Жоба деректері жоқ",
+    "completedTasks": "Аяқталған тапсырмалар",
+    "noCompletedInPeriod": "{{label}} кезеңінде тапсырма аяқталмады.",
+    "tableId": "ID",
+    "tableTitle": "Атауы",
+    "tablePriority": "Басымдық",
+    "tableCompleted": "Аяқталды",
+    "unassigned": "Тағайындалмаған",
+    "noChange": "Өзгеріс жоқ",
+    "vsPrior": "алдыңғы кезеңге {{value}}",
+    "noPriorData": "Алдыңғы кезең деректері жоқ"
+  },
+  "settings": {
+    "title": "Баптаулар",
+    "account": "Аккаунт",
+    "profile": "Профиль",
+    "accountManagement": "Аккаунтты басқару",
+    "accountDesc": "Құпия сөз, байланған аккаунттар және қауіпсіздікті Clerk арқылы басқарыңыз.",
+    "openPortal": "Аккаунт порталын ашу",
+    "about": "OperBlock туралы",
+    "aboutDesc": "Ішкі жоба басқару құралы — v0.1.0",
+    "languageDesc": "Қолданба интерфейсінің тілін таңдаңыз."
+  },
+  "members": {
+    "title": "Қатысушылар",
+    "you": "Сіз",
+    "inviteSoon": "Команданы шақыру (жақында)"
+  },
+  "notifications": {
+    "title": "Хабарландырулар",
+    "empty": "Хабарландыру жоқ"
+  },
+  "tags": {
+    "design": "Дизайн",
+    "marketing": "Маркетинг",
+    "engineering": "Әзірлеу",
+    "planning": "Жоспарлау",
+    "research": "Зерттеу",
+    "docs": "Құжаттама",
+    "devops": "DevOps",
+    "product": "Өнім",
+    "ux": "UX",
+    "security": "Қауіпсіздік"
+  },
+  "previewTasks": {
+    "designAudit": "Дизайн жүйесін аудиттеу",
+    "updateCopy": "Лендинг мәтінін жаңарту",
+    "buildKanban": "Канбан тақтасын құру",
+    "kickoff": "Жоба бастауы"
+  }
+}
