@@ -86,7 +86,7 @@
     "noProjectTitle": "Нет проекта",
     "noProjectDesc": "Создайте проект, чтобы добавлять задачи на доску.",
     "newProjectPlaceholder": "Название проекта",
-    "createProject": "Создать",
+    "createProject": "Создать проект",
     "needProjectFirst": "Сначала создайте проект"
   },
   "tasks": {

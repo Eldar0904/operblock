@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import {
   BarChart3,
   Building2,
@@ -6,18 +7,69 @@ import {
   LayoutDashboard,
   LayoutGrid,
   List,
+  Plus,
   Settings,
   Target,
 } from "lucide-react";
 import { Link, NavLink, Outlet } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
-import { useProjects } from "@/hooks/useProjects";
+import { useCreateProject, useProjects } from "@/hooks/useProjects";
+import type { ApiProject } from "@/lib/mock-data";
+
+const ACTIVE_PROJECT_KEY = "operblock-active-project";
 
 export default function DashboardLayout() {
   const { t } = useTranslation();
-  const { data: projects = [] } = useProjects();
-  const activeProject = projects[0];
+  const { data: projects = [], isLoading } = useProjects();
+  const createProject = useCreateProject();
+  const [activeProjectId, setActiveProjectId] = useState<string | null>(() =>
+    localStorage.getItem(ACTIVE_PROJECT_KEY),
+  );
+  const [creating, setCreating] = useState(false);
+  const [newName, setNewName] = useState("");
+
+  useEffect(() => {
+    if (projects.length === 0) {
+      if (activeProjectId) {
+        setActiveProjectId(null);
+        localStorage.removeItem(ACTIVE_PROJECT_KEY);
+      }
+      return;
+    }
+
+    const stillExists = projects.some((p) => p.id === activeProjectId);
+    if (!stillExists) {
+      const nextId = projects[0].id;
+      setActiveProjectId(nextId);
+      localStorage.setItem(ACTIVE_PROJECT_KEY, nextId);
+    }
+  }, [projects, activeProjectId]);
+
+  const activeProject =
+    projects.find((p) => p.id === activeProjectId) ?? projects[0];
+
+  const selectProject = (project: ApiProject) => {
+    setActiveProjectId(project.id);
+    localStorage.setItem(ACTIVE_PROJECT_KEY, project.id);
+  };
+
+  const handleCreateProject = (e: React.FormEvent) => {
+    e.preventDefault();
+    const name = newName.trim();
+    if (!name) return;
+    createProject.mutate(
+      { name },
+      {
+        onSuccess: (project) => {
+          setNewName("");
+          setCreating(false);
+          setActiveProjectId(project.id);
+          localStorage.setItem(ACTIVE_PROJECT_KEY, project.id);
+        },
+      },
+    );
+  };
 
   const navItems = [
     { icon: LayoutDashboard, label: t("nav.dashboard"), to: "/dashboard" },
@@ -40,7 +92,7 @@ export default function DashboardLayout() {
           </Link>
         </div>
 
-        <nav className="flex-1 space-y-0.5 p-3">
+        <nav className="flex-1 space-y-0.5 overflow-y-auto p-3">
           {navItems.map(({ icon: Icon, label, to }) => (
             <NavLink
               key={to}
@@ -64,6 +116,79 @@ export default function DashboardLayout() {
               )}
             </NavLink>
           ))}
+
+          <div className="pt-4">
+            <div className="mb-1 flex items-center justify-between px-3">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                {t("common.projects")}
+              </p>
+              <button
+                type="button"
+                onClick={() => setCreating((v) => !v)}
+                className="rounded p-0.5 text-muted-foreground hover:bg-sidebar-accent hover:text-foreground"
+                title={t("projects.createProject")}
+                aria-label={t("projects.createProject")}
+              >
+                <Plus className="h-3.5 w-3.5" />
+              </button>
+            </div>
+
+            {creating && (
+              <form onSubmit={handleCreateProject} className="mb-2 space-y-1.5 px-1">
+                <input
+                  autoFocus
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  placeholder={t("projects.newProjectPlaceholder")}
+                  className="h-8 w-full rounded-md border border-input bg-background px-2 text-xs outline-none focus:ring-2 focus:ring-ring"
+                />
+                <div className="flex gap-1">
+                  <button
+                    type="submit"
+                    disabled={createProject.isPending || !newName.trim()}
+                    className="h-7 flex-1 rounded-md bg-indigo-600 text-xs font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+                  >
+                    {t("projects.createProject")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCreating(false);
+                      setNewName("");
+                    }}
+                    className="h-7 rounded-md px-2 text-xs text-muted-foreground hover:bg-sidebar-accent"
+                  >
+                    {t("common.cancel")}
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {isLoading ? (
+              <p className="px-3 py-2 text-xs text-muted-foreground">{t("common.loading")}</p>
+            ) : projects.length === 0 ? (
+              <p className="px-3 py-2 text-xs text-muted-foreground">{t("projects.noProjectTitle")}</p>
+            ) : (
+              <div className="space-y-0.5">
+                {projects.map((project) => (
+                  <button
+                    key={project.id}
+                    type="button"
+                    onClick={() => selectProject(project)}
+                    className={cn(
+                      "flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-left text-sm transition-colors",
+                      activeProject?.id === project.id
+                        ? "bg-indigo-50 font-medium text-indigo-700"
+                        : "text-sidebar-foreground hover:bg-sidebar-accent",
+                    )}
+                  >
+                    <FolderKanban className="h-3.5 w-3.5 shrink-0" />
+                    <span className="truncate">{project.name}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </nav>
 
         <div className="space-y-2 border-t border-sidebar-border p-3">
