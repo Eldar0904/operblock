@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   BarChart3,
   Building2,
@@ -16,6 +16,7 @@ import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { useCreateProject, useDailyProject, useProjects } from "@/hooks/useProjects";
+import { useAllTasks } from "@/hooks/useTasks";
 import type { ApiProject } from "@/lib/mock-data";
 
 const ACTIVE_PROJECT_KEY = "operblock-active-project";
@@ -25,6 +26,7 @@ export default function DashboardLayout() {
   const navigate = useNavigate();
   const { data: projects = [], isLoading } = useProjects();
   useDailyProject();
+  const { data: allTasks = [] } = useAllTasks();
   const createProject = useCreateProject();
   const [activeProjectId, setActiveProjectId] = useState<string | null>(() =>
     localStorage.getItem(ACTIVE_PROJECT_KEY),
@@ -52,6 +54,13 @@ export default function DashboardLayout() {
   const activeProject =
     projects.find((p) => p.id === activeProjectId) ?? projects[0];
 
+  const inboxCount = useMemo(() => {
+    const projectIds = new Set(projects.map((p) => p.id));
+    return allTasks.filter(
+      (task) => task.status === "in_review" && projectIds.has(task.projectId),
+    ).length;
+  }, [allTasks, projects]);
+
   const selectProject = (project: ApiProject) => {
     setActiveProjectId(project.id);
     localStorage.setItem(ACTIVE_PROJECT_KEY, project.id);
@@ -76,15 +85,25 @@ export default function DashboardLayout() {
     );
   };
 
-  const navItems = [
+  const dailyNav = [
     { icon: LayoutDashboard, label: t("nav.dashboard"), to: "/dashboard" },
     { icon: CalendarDays, label: t("nav.daily"), to: "/dashboard/daily" },
     { icon: List, label: t("nav.myTasks"), to: "/dashboard/my-tasks" },
+  ];
+
+  const longTermNav = [
+    { icon: FolderKanban, label: t("nav.projects"), to: "/dashboard/projects" },
     { icon: Inbox, label: t("nav.inbox"), to: "/dashboard/inbox" },
     { icon: Target, label: t("nav.goals"), to: "/dashboard/goals" },
-    { icon: BarChart3, label: t("nav.reports"), to: "/dashboard/reports" },
-    { icon: FolderKanban, label: t("nav.projects"), to: "/dashboard/projects" },
   ];
+
+  const navLinkClass = ({ isActive }: { isActive: boolean }) =>
+    cn(
+      "flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
+      isActive
+        ? "bg-indigo-50 font-medium text-indigo-700"
+        : "text-sidebar-foreground hover:bg-sidebar-accent",
+    );
 
   return (
     <div className="flex h-screen bg-[#F4F5F7]">
@@ -99,25 +118,22 @@ export default function DashboardLayout() {
         </div>
 
         <nav className="flex-1 space-y-0.5 overflow-y-auto p-3">
-          {navItems.map(({ icon: Icon, label, to }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={to === "/dashboard"}
-              className={({ isActive }) =>
-                cn(
-                  "flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
-                  isActive
-                    ? "bg-indigo-50 font-medium text-indigo-700"
-                    : "text-sidebar-foreground hover:bg-sidebar-accent",
-                )
-              }
-            >
+          {dailyNav.map(({ icon: Icon, label, to }) => (
+            <NavLink key={to} to={to} end={to === "/dashboard"} className={navLinkClass}>
               <Icon className="h-4 w-4" />
               <span className="flex-1 text-left">{label}</span>
-              {to === "/dashboard/inbox" && (
+            </NavLink>
+          ))}
+
+          <div className="my-2 border-t border-sidebar-border" />
+
+          {longTermNav.map(({ icon: Icon, label, to }) => (
+            <NavLink key={to} to={to} className={navLinkClass}>
+              <Icon className="h-4 w-4" />
+              <span className="flex-1 text-left">{label}</span>
+              {to === "/dashboard/inbox" && inboxCount > 0 && (
                 <span className="rounded-full bg-indigo-600 px-1.5 py-0.5 text-[10px] font-medium text-white">
-                  •
+                  {inboxCount}
                 </span>
               )}
             </NavLink>
@@ -198,23 +214,17 @@ export default function DashboardLayout() {
         </nav>
 
         <div className="space-y-2 border-t border-sidebar-border p-3">
+          <NavLink to="/dashboard/reports" className={navLinkClass}>
+            <BarChart3 className="h-4 w-4" />
+            {t("nav.reports")}
+          </NavLink>
           <div className="flex items-center gap-2 rounded-md px-3 py-2">
             <div className="flex h-6 w-6 items-center justify-center rounded bg-indigo-100 text-indigo-700">
               <Building2 className="h-3.5 w-3.5" />
             </div>
             <span className="text-sm font-medium text-sidebar-foreground">{t("workspace")}</span>
           </div>
-          <NavLink
-            to="/dashboard/settings"
-            className={({ isActive }) =>
-              cn(
-                "flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
-                isActive
-                  ? "bg-indigo-50 font-medium text-indigo-700"
-                  : "text-sidebar-foreground hover:bg-sidebar-accent",
-              )
-            }
-          >
+          <NavLink to="/dashboard/settings" className={navLinkClass}>
             <Settings className="h-4 w-4" />
             {t("nav.settings")}
           </NavLink>

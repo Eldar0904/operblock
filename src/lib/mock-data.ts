@@ -23,6 +23,7 @@ export interface ApiProject {
   orgId: string;
   name: string;
   isPersonal?: boolean;
+  createdByUserId?: string | null;
   createdAt?: string;
 }
 

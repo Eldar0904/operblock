@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { and, eq } from "drizzle-orm";
 import { getDb, isDbConfigured, schema } from "../db/index.js";
-import { requireClerkAuth } from "../middleware/auth.js";
+import { getClerkUserId, requireClerkAuth } from "../middleware/auth.js";
 
 const router = Router();
 
@@ -119,10 +119,16 @@ router.post("/", async (req, res) => {
   try {
     const db = getDb();
     const resolvedOrgId = await ensureOrgId(db, orgId);
+    const createdByUserId = getClerkUserId(req);
 
     const [project] = await db
       .insert(schema.projects)
-      .values({ name: name.trim(), orgId: resolvedOrgId, isPersonal: false })
+      .values({
+        name: name.trim(),
+        orgId: resolvedOrgId,
+        isPersonal: false,
+        createdByUserId: createdByUserId ?? null,
+      })
       .returning();
 
     res.status(201).json(project);
@@ -180,6 +186,14 @@ router.delete("/:id", async (req, res) => {
 
     if (existing.isPersonal) {
       return res.status(400).json({ error: "Cannot delete shared Daily board" });
+    }
+
+    const userId = getClerkUserId(req);
+    if (
+      existing.createdByUserId &&
+      (!userId || existing.createdByUserId !== userId)
+    ) {
+      return res.status(403).json({ error: "Only the project creator can delete this project" });
     }
 
     const [project] = await db

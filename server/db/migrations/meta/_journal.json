@@ -15,6 +15,20 @@
       "when": 1721800000000,
       "tag": "0001_add_is_personal",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1721900000000,
+      "tag": "0003_add_project_created_by",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1722000000000,
+      "tag": "0004_add_goals",
+      "breakpoints": true
     }
   ]
 }

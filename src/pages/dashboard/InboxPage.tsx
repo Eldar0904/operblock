@@ -1,26 +1,45 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Inbox as InboxIcon } from "lucide-react";
 import { useAuth, UserButton } from "@clerk/clerk-react";
-import { useOutletContext } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { useTasks, useUpdateTask, useDeleteTask } from "@/hooks/useTasks";
-import { useMembers } from "@/hooks/useProjects";
+import {
+  useAllTasks,
+  useUpdateTask,
+  useUpdateTaskStatus,
+  useDeleteTask,
+} from "@/hooks/useTasks";
+import { useMembers, useProjects } from "@/hooks/useProjects";
 import { ListView } from "@/components/dashboard/ListView";
 import { NotificationsDropdown } from "@/components/dashboard/NotificationsDropdown";
-import type { DashboardOutletContext } from "@/pages/dashboard/DashboardLayout";
 import type { ApiTask } from "@/lib/mock-data";
 import { TaskModal, type TaskFormData } from "@/components/dashboard/TaskModal";
+import { useToast } from "@/components/ui/toast";
 
 export default function InboxPage() {
   const { t } = useTranslation();
-  const { activeProject } = useOutletContext<DashboardOutletContext>();
+  const { showToast } = useToast();
   const { userId } = useAuth();
   const { data: members = [] } = useMembers();
-  const { data: tasks = [], isLoading, isError } = useTasks(activeProject?.id);
+  const { data: projects = [] } = useProjects();
+  const { data: tasks = [], isLoading, isError } = useAllTasks();
   const updateTask = useUpdateTask();
+  const updateStatus = useUpdateTaskStatus();
   const deleteTask = useDeleteTask();
 
-  const inboxTasks = tasks.filter((task) => task.status === "in_review");
+  const projectIds = useMemo(() => new Set(projects.map((p) => p.id)), [projects]);
+  const projectNameById = useMemo(
+    () => Object.fromEntries(projects.map((p) => [p.id, p.name])),
+    [projects],
+  );
+
+  const inboxTasks = useMemo(
+    () =>
+      tasks.filter(
+        (task) => task.status === "in_review" && projectIds.has(task.projectId),
+      ),
+    [tasks, projectIds],
+  );
+
   const [modalOpen, setModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<ApiTask | null>(null);
 
@@ -45,6 +64,15 @@ export default function InboxPage() {
     );
   };
 
+  const handleApprove = (task: ApiTask) => {
+    updateStatus.mutate(
+      { id: task.id, status: "done" },
+      {
+        onSuccess: () => showToast(t("inbox.approved"), "success"),
+      },
+    );
+  };
+
   const handleDelete = (task: ApiTask) => {
     if (window.confirm(t("projects.deleteConfirm", { title: task.title }))) {
       deleteTask.mutate(task.id);
@@ -56,7 +84,14 @@ export default function InboxPage() {
       <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-background px-6">
         <div>
           <p className="text-xs text-muted-foreground">{t("inbox.reviewQueue")}</p>
-          <h1 className="text-base font-semibold">{t("inbox.title")}</h1>
+          <h1 className="text-base font-semibold">
+            {t("inbox.title")}
+            {inboxTasks.length > 0 && (
+              <span className="ml-2 text-sm font-normal text-muted-foreground">
+                ({inboxTasks.length})
+              </span>
+            )}
+          </h1>
         </div>
         <div className="flex items-center gap-3">
           <NotificationsDropdown />
@@ -78,7 +113,14 @@ export default function InboxPage() {
             <p className="mt-2 max-w-sm text-sm text-muted-foreground">{t("inbox.clearDesc")}</p>
           </div>
         ) : (
-          <ListView tasks={inboxTasks} onEdit={openEditModal} onDelete={handleDelete} />
+          <ListView
+            tasks={inboxTasks}
+            onEdit={openEditModal}
+            onDelete={handleDelete}
+            onApprove={handleApprove}
+            showProject
+            projectNameById={projectNameById}
+          />
         )}
       </div>
 

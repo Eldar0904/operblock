@@ -71,6 +71,7 @@ function useTaskMutationHandlers() {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["goals"] });
     },
   };
 }

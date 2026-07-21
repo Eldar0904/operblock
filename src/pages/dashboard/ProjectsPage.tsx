@@ -15,6 +15,7 @@ import {
 import { useCreateProject, useDailyProject, useDeleteProject, useMembers } from "@/hooks/useProjects";
 import type { ApiTask, Priority, TaskStatus } from "@/lib/mock-data";
 import { filterTasks } from "@/lib/task-utils";
+import { ApiError } from "@/lib/api";
 import { BoardView } from "@/components/dashboard/BoardView";
 import { ListView } from "@/components/dashboard/ListView";
 import { OverviewView } from "@/components/dashboard/OverviewView";
@@ -136,8 +137,22 @@ export default function ProjectsPage() {
 
   const handleDeleteProject = () => {
     if (!activeProject || isDailyRoute) return;
+    const canDelete =
+      activeProject.createdByUserId == null || activeProject.createdByUserId === userId;
+    if (!canDelete) {
+      showToast(t("projects.deleteForbidden"), "error");
+      return;
+    }
     if (window.confirm(t("projects.deleteProjectConfirm", { name: activeProject.name }))) {
-      deleteProject.mutate(activeProject.id);
+      deleteProject.mutate(activeProject.id, {
+        onError: (err) => {
+          if (err instanceof ApiError && err.status === 403) {
+            showToast(t("projects.deleteForbidden"), "error");
+            return;
+          }
+          showToast(t("tasks.somethingWrong"), "error");
+        },
+      });
     }
   };
 
@@ -287,7 +302,10 @@ export default function ProjectsPage() {
         <div className="flex items-center gap-2 py-2">
           <PriorityFilter value={priorityFilter} onChange={setPriorityFilter} />
           <MembersDropdown />
-          {!isDailyRoute && activeProject && (
+          {!isDailyRoute &&
+            activeProject &&
+            (activeProject.createdByUserId == null ||
+              activeProject.createdByUserId === userId) && (
             <Button
               size="sm"
               variant="outline"

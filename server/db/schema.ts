@@ -33,6 +33,7 @@ export const projects = pgTable("projects", {
     .references(() => organizations.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   isPersonal: boolean("is_personal").notNull().default(false),
+  createdByUserId: text("created_by_user_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
@@ -72,6 +73,27 @@ export const comments = pgTable("comments", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
+export const goals = pgTable("goals", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  title: text("title").notNull(),
+  description: text("description"),
+  createdByUserId: text("created_by_user_id"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const goalProjects = pgTable(
+  "goal_projects",
+  {
+    goalId: uuid("goal_id")
+      .notNull()
+      .references(() => goals.id, { onDelete: "cascade" }),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+  },
+  (table) => [primaryKey({ columns: [table.goalId, table.projectId] })],
+);
+
 export const organizationsRelations = relations(organizations, ({ many }) => ({
   projects: many(projects),
 }));
@@ -82,6 +104,7 @@ export const projectsRelations = relations(projects, ({ one, many }) => ({
     references: [organizations.id],
   }),
   tasks: many(tasks),
+  goalLinks: many(goalProjects),
 }));
 
 export const tasksRelations = relations(tasks, ({ one, many }) => ({
@@ -104,5 +127,20 @@ export const commentsRelations = relations(comments, ({ one }) => ({
   task: one(tasks, {
     fields: [comments.taskId],
     references: [tasks.id],
+  }),
+}));
+
+export const goalsRelations = relations(goals, ({ many }) => ({
+  projectLinks: many(goalProjects),
+}));
+
+export const goalProjectsRelations = relations(goalProjects, ({ one }) => ({
+  goal: one(goals, {
+    fields: [goalProjects.goalId],
+    references: [goals.id],
+  }),
+  project: one(projects, {
+    fields: [goalProjects.projectId],
+    references: [projects.id],
   }),
 }));

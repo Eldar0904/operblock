@@ -1,4 +1,4 @@
-import { Calendar, Pencil, Trash2 } from "lucide-react";
+import { Calendar, Check, Pencil, Trash2 } from "lucide-react";
 import { useAuth } from "@clerk/clerk-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -19,9 +19,19 @@ interface ListViewProps {
   tasks: ApiTask[];
   onEdit: (task: ApiTask) => void;
   onDelete: (task: ApiTask) => void;
+  onApprove?: (task: ApiTask) => void;
+  projectNameById?: Record<string, string>;
+  showProject?: boolean;
 }
 
-export function ListView({ tasks, onEdit, onDelete }: ListViewProps) {
+export function ListView({
+  tasks,
+  onEdit,
+  onDelete,
+  onApprove,
+  projectNameById,
+  showProject = false,
+}: ListViewProps) {
   const { t } = useTranslation();
   const { userId } = useAuth();
   const { data: members = [] } = useMembers();
@@ -42,6 +52,9 @@ export function ListView({ tasks, onEdit, onDelete }: ListViewProps) {
           <tr className="border-b border-border bg-muted/50 text-left">
             <th className="px-4 py-3 font-medium text-muted-foreground">{t("reports.tableId")}</th>
             <th className="px-4 py-3 font-medium text-muted-foreground">{t("list.title")}</th>
+            {showProject && (
+              <th className="px-4 py-3 font-medium text-muted-foreground">{t("list.project")}</th>
+            )}
             <th className="px-4 py-3 font-medium text-muted-foreground">{t("list.status")}</th>
             <th className="px-4 py-3 font-medium text-muted-foreground">{t("list.priority")}</th>
             <th className="px-4 py-3 font-medium text-muted-foreground">{t("list.dueDate")}</th>
@@ -59,6 +72,11 @@ export function ListView({ tasks, onEdit, onDelete }: ListViewProps) {
                 {formatTicketId(task.id)}
               </td>
               <td className="px-4 py-3 font-medium">{task.title}</td>
+              {showProject && (
+                <td className="px-4 py-3 text-muted-foreground">
+                  {projectNameById?.[task.projectId] ?? "—"}
+                </td>
+              )}
               <td className="px-4 py-3 text-muted-foreground">{statusLabel(task.status)}</td>
               <td className="px-4 py-3">
                 {task.priority ? (
@@ -99,6 +117,17 @@ export function ListView({ tasks, onEdit, onDelete }: ListViewProps) {
               </td>
               <td className="px-4 py-3">
                 <div className="flex gap-1">
+                  {onApprove && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => onApprove(task)}
+                      className="text-emerald-600 hover:text-emerald-700"
+                      title={t("inbox.approve")}
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
                   <Button variant="ghost" size="icon" onClick={() => onEdit(task)}>
                     <Pencil className="h-3.5 w-3.5" />
                   </Button>

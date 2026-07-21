@@ -17,6 +17,19 @@ export interface ApiComment {
   createdAt: string;
 }
 
+export interface ApiGoal {
+  id: string;
+  title: string;
+  description?: string | null;
+  createdByUserId?: string | null;
+  createdAt?: string;
+  projectIds: string[];
+  projects: { id: string; name: string }[];
+  totalTasks: number;
+  doneTasks: number;
+  progressPercent: number;
+}
+
 const API_BASE = import.meta.env.VITE_API_URL ?? "/api";
 
 export class ApiError extends Error {
@@ -127,6 +140,22 @@ export const api = {
 
   deleteComment: (token: string | null, id: string) =>
     request<void>(`/comments/${id}`, { method: "DELETE" }, token),
+
+  getGoals: (token: string | null) => request<ApiGoal[]>("/goals", {}, token),
+
+  createGoal: (
+    token: string | null,
+    data: { title: string; description?: string; projectIds?: string[] },
+  ) => request<ApiGoal>("/goals", { method: "POST", body: JSON.stringify(data) }, token),
+
+  updateGoal: (
+    token: string | null,
+    id: string,
+    data: Partial<{ title: string; description: string | null; projectIds: string[] }>,
+  ) => request<ApiGoal>(`/goals/${id}`, { method: "PATCH", body: JSON.stringify(data) }, token),
+
+  deleteGoal: (token: string | null, id: string) =>
+    request<void>(`/goals/${id}`, { method: "DELETE" }, token),
 
   getReportSummary: (
     token: string | null,
