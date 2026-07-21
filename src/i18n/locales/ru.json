@@ -82,7 +82,12 @@
     "loadError": "Не удалось загрузить задачи. Обновите страницу.",
     "deleteConfirm": "Удалить «{{title}}»?",
     "deleteProject": "Удалить проект",
-    "deleteProjectConfirm": "Удалить проект «{{name}}» и все его задачи? Это нельзя отменить."
+    "deleteProjectConfirm": "Удалить проект «{{name}}» и все его задачи? Это нельзя отменить.",
+    "noProjectTitle": "Нет проекта",
+    "noProjectDesc": "Создайте проект, чтобы добавлять задачи на доску.",
+    "newProjectPlaceholder": "Название проекта",
+    "createProject": "Создать",
+    "needProjectFirst": "Сначала создайте проект"
   },
   "tasks": {
     "addTask": "Добавить задачу",

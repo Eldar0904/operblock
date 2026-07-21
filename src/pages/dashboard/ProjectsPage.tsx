@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Plus, Search, Trash2 } from "lucide-react";
+import { FolderKanban, Plus, Search, Trash2 } from "lucide-react";
 import { useSearchParams, useOutletContext } from "react-router-dom";
 import { useAuth, UserButton } from "@clerk/clerk-react";
 import { useTranslation } from "react-i18next";
@@ -12,7 +12,7 @@ import {
   useUpdateTaskStatus,
   useDeleteTask,
 } from "@/hooks/useTasks";
-import { useDeleteProject } from "@/hooks/useProjects";
+import { useCreateProject, useDeleteProject } from "@/hooks/useProjects";
 import type { ApiTask, Priority, TaskStatus } from "@/lib/mock-data";
 import { filterTasks } from "@/lib/task-utils";
 import { BoardView } from "@/components/dashboard/BoardView";
@@ -24,6 +24,7 @@ import { TaskModal, type TaskFormData } from "@/components/dashboard/TaskModal";
 import { NotificationsDropdown } from "@/components/dashboard/NotificationsDropdown";
 import { MembersDropdown } from "@/components/dashboard/MembersDropdown";
 import { PriorityFilter } from "@/components/dashboard/PriorityFilter";
+import { useToast } from "@/components/ui/toast";
 import type { DashboardOutletContext } from "@/pages/dashboard/DashboardLayout";
 
 const VIEW_TAB_KEYS = ["overview", "list", "board", "timeline", "files"] as const;
@@ -36,6 +37,7 @@ function paramToView(param: string | null): ViewTabKey {
 
 export default function ProjectsPage() {
   const { t } = useTranslation();
+  const { showToast } = useToast();
   const { activeProject } = useOutletContext<DashboardOutletContext>();
   const { userId } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -46,6 +48,7 @@ export default function ProjectsPage() {
   const updateTask = useUpdateTask();
   const updateStatus = useUpdateTaskStatus();
   const deleteTask = useDeleteTask();
+  const createProject = useCreateProject();
   const deleteProject = useDeleteProject();
 
   const [search, setSearch] = useState("");
@@ -55,6 +58,7 @@ export default function ProjectsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<ApiTask | null>(null);
   const [defaultStatus, setDefaultStatus] = useState<TaskStatus>("todo");
+  const [newProjectName, setNewProjectName] = useState("");
 
   const filteredTasks = useMemo(
     () => filterTasks(tasks, { search, priority: priorityFilter }),
@@ -66,6 +70,10 @@ export default function ProjectsPage() {
   };
 
   const openAddModal = (status: TaskStatus = "todo") => {
+    if (!activeProject) {
+      showToast(t("projects.needProjectFirst"), "error");
+      return;
+    }
     setEditingTask(null);
     setDefaultStatus(status);
     setModalOpen(true);
@@ -105,6 +113,8 @@ export default function ProjectsPage() {
         },
         { onSuccess: () => setModalOpen(false) },
       );
+    } else {
+      showToast(t("projects.needProjectFirst"), "error");
     }
   };
 
@@ -125,6 +135,19 @@ export default function ProjectsPage() {
     }
   };
 
+  const handleCreateProject = (e: React.FormEvent) => {
+    e.preventDefault();
+    const name = newProjectName.trim();
+    if (!name) return;
+    createProject.mutate(
+      { name },
+      {
+        onSuccess: () => setNewProjectName(""),
+        onError: () => showToast(t("tasks.somethingWrong"), "error"),
+      },
+    );
+  };
+
   const handleDrop = (status: TaskStatus) => {
     if (!draggingTaskId) return;
     const task = tasks.find((t) => t.id === draggingTaskId);
@@ -137,15 +160,59 @@ export default function ProjectsPage() {
 
   const isSubmitting = createTask.isPending || updateTask.isPending;
 
+  if (!activeProject) {
+    return (
+      <>
+        <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-background px-6">
+          <div>
+            <p className="text-xs text-muted-foreground">{t("nav.projects")}</p>
+            <h1 className="text-base font-semibold">{t("projects.noProjectTitle")}</h1>
+          </div>
+          <div className="flex items-center gap-3">
+            <NotificationsDropdown />
+            <UserButton appearance={{ elements: { avatarBox: "h-7 w-7" } }} />
+          </div>
+        </header>
+        <div className="flex flex-1 items-center justify-center p-6">
+          <div className="w-full max-w-md rounded-lg border border-border bg-background p-6 text-center">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-indigo-50 text-indigo-600">
+              <FolderKanban className="h-6 w-6" />
+            </div>
+            <h2 className="text-base font-semibold">{t("projects.noProjectTitle")}</h2>
+            <p className="mt-2 text-sm text-muted-foreground">{t("projects.noProjectDesc")}</p>
+            <form onSubmit={handleCreateProject} className="mt-5 flex gap-2">
+              <input
+                value={newProjectName}
+                onChange={(e) => setNewProjectName(e.target.value)}
+                placeholder={t("projects.newProjectPlaceholder")}
+                className="h-9 flex-1 rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+                required
+              />
+              <Button
+                type="submit"
+                size="sm"
+                className="bg-indigo-600 hover:bg-indigo-700"
+                disabled={createProject.isPending || !newProjectName.trim()}
+              >
+                <Plus className="h-3.5 w-3.5" />
+                {t("projects.createProject")}
+              </Button>
+            </form>
+          </div>
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
       <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-background px-6">
         <div>
           <p className="text-xs text-muted-foreground">
-            {t("projects.breadcrumb", { name: activeProject?.name ?? t("common.loading") })}
+            {t("projects.breadcrumb", { name: activeProject.name })}
           </p>
           <h1 className="text-base font-semibold">
-            {activeProject?.name ?? t("projects.defaultName")}
+            {activeProject.name}
             {isFetching && (
               <span className="ml-2 text-xs font-normal text-muted-foreground">{t("common.syncing")}</span>
             )}
@@ -187,18 +254,16 @@ export default function ProjectsPage() {
         <div className="flex items-center gap-2 py-2">
           <PriorityFilter value={priorityFilter} onChange={setPriorityFilter} />
           <MembersDropdown />
-          {activeProject && (
-            <Button
-              size="sm"
-              variant="outline"
-              className="text-red-600 hover:bg-red-50 hover:text-red-700"
-              onClick={handleDeleteProject}
-              disabled={deleteProject.isPending}
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-              {t("projects.deleteProject")}
-            </Button>
-          )}
+          <Button
+            size="sm"
+            variant="outline"
+            className="text-red-600 hover:bg-red-50 hover:text-red-700"
+            onClick={handleDeleteProject}
+            disabled={deleteProject.isPending}
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            {t("projects.deleteProject")}
+          </Button>
           <Button
             size="sm"
             className="bg-indigo-600 hover:bg-indigo-700"

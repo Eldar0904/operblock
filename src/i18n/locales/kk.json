@@ -82,7 +82,12 @@
     "loadError": "Тапсырмалар жүктелмedi. Бетті жаңартыңыз.",
     "deleteConfirm": "«{{title}}» жою керек пе?",
     "deleteProject": "Жобаны жою",
-    "deleteProjectConfirm": "«{{name}}» жобасын және барлық тапсырмаларды жою керек пе? Бұл әрекетті қайтару мүмкін емес."
+    "deleteProjectConfirm": "«{{name}}» жобасын және барлық тапсырмаларды жою керек пе? Бұл әрекетті қайтару мүмкін емес.",
+    "noProjectTitle": "Жоба жоқ",
+    "noProjectDesc": "Тапсырма қосу үшін алдымен жоба жасаңыз.",
+    "newProjectPlaceholder": "Жоба атауы",
+    "createProject": "Жасау",
+    "needProjectFirst": "Алдымен жоба жасаңыз"
   },
   "tasks": {
     "addTask": "Тапсырма қосу",
