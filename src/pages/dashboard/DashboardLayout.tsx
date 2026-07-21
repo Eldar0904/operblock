@@ -7,7 +7,6 @@ import {
   ChevronRight,
   Folder,
   FolderKanban,
-  Inbox,
   LayoutDashboard,
   LayoutGrid,
   List,
@@ -34,7 +33,6 @@ import {
   usePortfolios,
   useUpdatePortfolio,
 } from "@/hooks/usePortfolios";
-import { useAllTasks } from "@/hooks/useTasks";
 import { ApiError } from "@/lib/api";
 import type { ApiPortfolio, ApiProject } from "@/lib/mock-data";
 import { useToast } from "@/components/ui/toast";
@@ -50,7 +48,6 @@ export default function DashboardLayout() {
   const { data: projects = [], isLoading } = useProjects();
   const { data: portfolios = [] } = usePortfolios();
   useDailyProject();
-  const { data: allTasks = [] } = useAllTasks();
   const createProject = useCreateProject();
   const updateProject = useUpdateProject();
   const createPortfolio = useCreatePortfolio();
@@ -107,13 +104,6 @@ export default function DashboardLayout() {
 
   const highlightedProjectId = routeProjectId ?? activeProjectId;
   const activeProject = projects.find((p) => p.id === highlightedProjectId);
-
-  const inboxCount = useMemo(() => {
-    const projectIds = new Set(projects.map((p) => p.id));
-    return allTasks.filter(
-      (task) => task.status === "in_review" && projectIds.has(task.projectId),
-    ).length;
-  }, [allTasks, projects]);
 
   const portfolioIds = useMemo(() => new Set(portfolios.map((p) => p.id)), [portfolios]);
 
@@ -263,7 +253,6 @@ export default function DashboardLayout() {
 
   const longTermNav = [
     { icon: FolderKanban, label: t("nav.projects"), to: "/dashboard/projects" },
-    { icon: Inbox, label: t("nav.inbox"), to: "/dashboard/inbox" },
     { icon: Target, label: t("nav.goals"), to: "/dashboard/goals" },
   ];
 
@@ -467,11 +456,6 @@ export default function DashboardLayout() {
             <NavLink key={to} to={to} className={navLinkClass}>
               <Icon className="h-4 w-4" />
               <span className="flex-1 text-left">{label}</span>
-              {to === "/dashboard/inbox" && inboxCount > 0 && (
-                <span className="rounded-full bg-indigo-600 px-1.5 py-0.5 text-[10px] font-medium text-white">
-                  {inboxCount}
-                </span>
-              )}
             </NavLink>
           ))}
 

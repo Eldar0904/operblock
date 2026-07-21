@@ -11,7 +11,6 @@ import OverviewPage from "@/pages/dashboard/OverviewPage";
 import ProjectsHubPage from "@/pages/dashboard/ProjectsHubPage";
 import ProjectsPage from "@/pages/dashboard/ProjectsPage";
 import MyTasksPage from "@/pages/dashboard/MyTasksPage";
-import InboxPage from "@/pages/dashboard/InboxPage";
 import GoalsPage from "@/pages/dashboard/GoalsPage";
 import ReportsPage from "@/pages/dashboard/ReportsPage";
 import SettingsPage from "@/pages/dashboard/SettingsPage";
@@ -30,7 +29,6 @@ export default function App() {
           <Route path="projects/:projectId" element={<ProjectsPage />} />
           <Route path="daily" element={<ProjectsPage />} />
           <Route path="my-tasks" element={<MyTasksPage />} />
-          <Route path="inbox" element={<InboxPage />} />
           <Route path="goals" element={<GoalsPage />} />
           <Route path="reports" element={<ReportsPage />} />
           <Route path="settings" element={<SettingsPage />} />

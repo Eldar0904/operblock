@@ -36,6 +36,13 @@
       "when": 1722100000000,
       "tag": "0005_add_portfolios",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1722200000000,
+      "tag": "0006_move_cp_tasks_to_daily",
+      "breakpoints": true
     }
   ]
 }
