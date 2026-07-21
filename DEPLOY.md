@@ -112,16 +112,31 @@ Open `http://localhost:3001` — frontend and API on the same port.
 
 ---
 
-## Alternative hosts
+## Railway (alternative)
 
-Same `build` + `start` commands work on **Railway**, **Fly.io**, or any Node host:
+Same one-service layout. Config lives in [`railway.toml`](railway.toml). Step-by-step: [`RAILWAY_CHECKLIST.md`](RAILWAY_CHECKLIST.md).
+
+1. https://railway.com/new → **Deploy from GitHub repo** → `Eldar0904/operblock`
+2. **Settings → Networking → Generate Domain**
+3. Set the same environment variables as Render (`NODE_ENV`, `DATABASE_URL`, Clerk keys, `VITE_CLERK_PUBLISHABLE_KEY`)
+4. After first deploy, set `APP_URL` to `https://YOUR-SERVICE.up.railway.app` and redeploy
+5. Add that URL to Clerk allowed redirects / paths
+6. Verify `https://YOUR-SERVICE.up.railway.app/api/health`
+
+Railway injects `PORT` automatically; the server already reads `process.env.PORT`.
+
+Build / start (from `railway.toml`):
 
 ```bash
-npm install && npm run db:migrate && npm run build
-NODE_ENV=production npm start
+npm install --include=dev && npm run db:migrate && npm run build
+npm start
 ```
 
-Set the same environment variables and point Clerk `APP_URL` to your host URL.
+---
+
+## Other hosts
+
+Same `build` + `start` commands work on **Fly.io** or any Node host. Set the same environment variables and point Clerk / `APP_URL` to your live domain.
 
 ---
 

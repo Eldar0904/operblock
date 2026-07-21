@@ -174,9 +174,12 @@ All `/api/projects` and `/api/tasks` routes require a valid Clerk JWT (`Authoriz
 
 ## Deploy
 
-See **[DEPLOY.md](DEPLOY.md)** for Render deployment with Neon + Clerk.
+See **[DEPLOY.md](DEPLOY.md)** for production deploy with Neon + Clerk.
 
-Quick summary: one web service runs `npm run db:migrate && npm run build` then `NODE_ENV=production npm start`. Set `APP_URL` and Clerk redirect URLs to your live domain.
+- **Render:** [`RENDER_CHECKLIST.md`](RENDER_CHECKLIST.md) + `render.yaml`
+- **Railway:** [`RAILWAY_CHECKLIST.md`](RAILWAY_CHECKLIST.md) + `railway.toml`
+
+Quick summary: one web service runs migrate + build, then `npm start`. Set `APP_URL` and Clerk redirect URLs to your live domain.
 
 ## Theme
 

@@ -22,7 +22,7 @@ git push -u origin main
 | Key | Where to get it |
 |-----|-----------------|
 | `NODE_ENV` | `production` (also in render.yaml) |
-| `DATABASE_URL` | Local `.env` (Neon) |
+| `DATABASE_URL` | Neon **direct** (non-pooler) URL preferred for migrations |
 | `CLERK_SECRET_KEY` | Local `.env` |
 | `CLERK_PUBLISHABLE_KEY` | Local `.env` |
 | `VITE_CLERK_PUBLISHABLE_KEY` | Same as publishable key |
