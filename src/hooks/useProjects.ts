@@ -1,7 +1,7 @@
 import { useAuth } from "@clerk/clerk-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api, ApiError } from "@/lib/api";
-import { MOCK_PROJECT, type ApiProject } from "@/lib/mock-data";
+import { api, ApiError, type ApiMember } from "@/lib/api";
+import { MOCK_DAILY_PROJECT, MOCK_PROJECT, type ApiProject } from "@/lib/mock-data";
 
 export function useProjects() {
   const { getToken } = useAuth();
@@ -23,6 +23,47 @@ export function useProjects() {
       }
     },
     retry: false,
+  });
+}
+
+export function useDailyProject() {
+  const { getToken } = useAuth();
+
+  return useQuery({
+    queryKey: ["projects", "daily"],
+    queryFn: async (): Promise<ApiProject> => {
+      try {
+        const token = await getToken();
+        return await api.getDailyProject(token);
+      } catch (err) {
+        if (err instanceof ApiError && (err.status === 503 || err.status >= 500)) {
+          return MOCK_DAILY_PROJECT;
+        }
+        if (err instanceof TypeError) {
+          return MOCK_DAILY_PROJECT;
+        }
+        throw err;
+      }
+    },
+    retry: false,
+  });
+}
+
+export function useMembers() {
+  const { getToken } = useAuth();
+
+  return useQuery({
+    queryKey: ["members"],
+    queryFn: async (): Promise<ApiMember[]> => {
+      try {
+        const token = await getToken();
+        return await api.getMembers(token);
+      } catch {
+        return [];
+      }
+    },
+    retry: false,
+    staleTime: 60_000,
   });
 }
 

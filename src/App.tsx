@@ -26,6 +26,7 @@ export default function App() {
         <Route path="/dashboard" element={<DashboardLayout />}>
           <Route index element={<OverviewPage />} />
           <Route path="projects" element={<ProjectsPage />} />
+          <Route path="daily" element={<ProjectsPage />} />
           <Route path="my-tasks" element={<MyTasksPage />} />
           <Route path="inbox" element={<InboxPage />} />
           <Route path="goals" element={<GoalsPage />} />

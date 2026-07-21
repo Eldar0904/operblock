@@ -4,7 +4,9 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { ApiTask, Priority, TaskStatus } from "@/lib/mock-data";
+import type { ApiMember } from "@/lib/api";
 import { useColumnConfig } from "@/i18n/use-labels";
+import { resolveAssignee } from "@/components/dashboard/AssigneeAvatar";
 
 export interface TaskFormData {
   title: string;
@@ -12,16 +14,19 @@ export interface TaskFormData {
   status: TaskStatus;
   priority: Priority | "";
   dueDate: string;
-  assignToMe: boolean;
+  assigneeUserId: string | null;
 }
 
-const emptyForm = (status: TaskStatus = "todo"): TaskFormData => ({
+const emptyForm = (
+  status: TaskStatus = "todo",
+  defaultAssignee: string | null = null,
+): TaskFormData => ({
   title: "",
   description: "",
   status,
   priority: "",
   dueDate: "",
-  assignToMe: false,
+  assigneeUserId: defaultAssignee,
 });
 
 interface TaskModalProps {
@@ -32,6 +37,9 @@ interface TaskModalProps {
   defaultStatus?: TaskStatus;
   isSubmitting?: boolean;
   currentUserId?: string;
+  members?: ApiMember[];
+  /** When creating, default assignee to current user (Daily board). */
+  defaultAssigneeToMe?: boolean;
 }
 
 export function TaskModal({
@@ -42,6 +50,8 @@ export function TaskModal({
   defaultStatus = "todo",
   isSubmitting,
   currentUserId,
+  members = [],
+  defaultAssigneeToMe = false,
 }: TaskModalProps) {
   const { t } = useTranslation();
   const columns = useColumnConfig();
@@ -56,13 +66,18 @@ export function TaskModal({
           status: task.status,
           priority: task.priority ?? "",
           dueDate: task.dueDate ?? "",
-          assignToMe: currentUserId ? task.assigneeUserId === currentUserId : false,
+          assigneeUserId: task.assigneeUserId ?? null,
         });
       } else {
-        setForm(emptyForm(defaultStatus));
+        setForm(
+          emptyForm(
+            defaultStatus,
+            defaultAssigneeToMe && currentUserId ? currentUserId : null,
+          ),
+        );
       }
     }
-  }, [open, task, defaultStatus, currentUserId]);
+  }, [open, task, defaultStatus, currentUserId, defaultAssigneeToMe]);
 
   if (!open) return null;
 
@@ -71,6 +86,29 @@ export function TaskModal({
     if (!form.title.trim()) return;
     onSubmit(form);
   };
+
+  const assigneeOptions = (() => {
+    const ids = new Set(members.map((m) => m.id));
+    if (currentUserId && !ids.has(currentUserId)) {
+      return [
+        {
+          id: currentUserId,
+          label: t("tasks.assigneeMe"),
+        },
+        ...members.map((m) => ({
+          id: m.id,
+          label: resolveAssignee(m.id, members, currentUserId)?.label ?? m.id,
+        })),
+      ];
+    }
+    return members.map((m) => ({
+      id: m.id,
+      label:
+        m.id === currentUserId
+          ? t("tasks.assigneeMe")
+          : resolveAssignee(m.id, members, currentUserId)?.label ?? m.id,
+    }));
+  })();
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -143,17 +181,26 @@ export function TaskModal({
               placeholder={t("tasks.dueDatePlaceholder")}
             />
           </div>
-          {currentUserId && (
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={form.assignToMe}
-                onChange={(e) => setForm((f) => ({ ...f, assignToMe: e.target.checked }))}
-                className="rounded border-input"
-              />
-              {t("tasks.assignToMe")}
-            </label>
-          )}
+          <div>
+            <label className="mb-1.5 block text-sm font-medium">{t("tasks.assignee")}</label>
+            <select
+              value={form.assigneeUserId ?? ""}
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  assigneeUserId: e.target.value || null,
+                }))
+              }
+              className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+            >
+              <option value="">{t("tasks.unassigned")}</option>
+              {assigneeOptions.map((opt) => (
+                <option key={opt.id} value={opt.id}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="outline" onClick={onClose}>
               {t("common.cancel")}

@@ -8,6 +8,7 @@ import { clerkAuth } from "./middleware/auth.js";
 import projectsRouter from "./routes/projects.js";
 import tasksRouter from "./routes/tasks.js";
 import reportsRouter from "./routes/reports.js";
+import membersRouter from "./routes/members.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const distPath = path.resolve(__dirname, "../dist");
@@ -37,6 +38,7 @@ if (clerkConfigured) {
   app.use("/api/projects", clerkAuth, projectsRouter);
   app.use("/api/tasks", clerkAuth, tasksRouter);
   app.use("/api/reports", clerkAuth, reportsRouter);
+  app.use("/api/members", clerkAuth, membersRouter);
 } else {
   console.warn(
     "CLERK_SECRET_KEY / CLERK_PUBLISHABLE_KEY not set — API auth disabled (dev only).",
@@ -44,6 +46,7 @@ if (clerkConfigured) {
   app.use("/api/projects", projectsRouter);
   app.use("/api/tasks", tasksRouter);
   app.use("/api/reports", reportsRouter);
+  app.use("/api/members", membersRouter);
 }
 
 if (isProduction) {

@@ -22,6 +22,7 @@ export interface ApiProject {
   id: string;
   orgId: string;
   name: string;
+  isPersonal?: boolean;
   createdAt?: string;
 }
 
@@ -29,6 +30,14 @@ export const MOCK_PROJECT: ApiProject = {
   id: "mock-project-1",
   orgId: "mock-org-1",
   name: "Q3 Launch: Project Nova",
+  isPersonal: false,
+};
+
+export const MOCK_DAILY_PROJECT: ApiProject = {
+  id: "mock-daily-1",
+  orgId: "mock-org-1",
+  name: "Daily",
+  isPersonal: true,
 };
 
 export const MOCK_TASKS: ApiTask[] = [

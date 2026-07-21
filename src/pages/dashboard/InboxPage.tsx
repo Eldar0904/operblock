@@ -4,6 +4,7 @@ import { useAuth, UserButton } from "@clerk/clerk-react";
 import { useOutletContext } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useTasks, useUpdateTask, useDeleteTask } from "@/hooks/useTasks";
+import { useMembers } from "@/hooks/useProjects";
 import { ListView } from "@/components/dashboard/ListView";
 import { NotificationsDropdown } from "@/components/dashboard/NotificationsDropdown";
 import type { DashboardOutletContext } from "@/pages/dashboard/DashboardLayout";
@@ -14,6 +15,7 @@ export default function InboxPage() {
   const { t } = useTranslation();
   const { activeProject } = useOutletContext<DashboardOutletContext>();
   const { userId } = useAuth();
+  const { data: members = [] } = useMembers();
   const { data: tasks = [], isLoading, isError } = useTasks(activeProject?.id);
   const updateTask = useUpdateTask();
   const deleteTask = useDeleteTask();
@@ -29,7 +31,6 @@ export default function InboxPage() {
 
   const handleModalSubmit = (form: TaskFormData) => {
     if (!editingTask) return;
-    const assigneeUserId = form.assignToMe && userId ? userId : null;
     updateTask.mutate(
       {
         id: editingTask.id,
@@ -38,7 +39,7 @@ export default function InboxPage() {
         status: form.status,
         priority: form.priority || null,
         dueDate: form.dueDate || null,
-        assigneeUserId,
+        assigneeUserId: form.assigneeUserId,
       },
       { onSuccess: () => setModalOpen(false) },
     );
@@ -88,6 +89,7 @@ export default function InboxPage() {
         task={editingTask}
         isSubmitting={updateTask.isPending}
         currentUserId={userId ?? undefined}
+        members={members}
       />
     </>
   );

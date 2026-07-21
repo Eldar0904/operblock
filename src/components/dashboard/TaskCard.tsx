@@ -1,10 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { Calendar, MessageSquare, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { useAuth } from "@clerk/clerk-react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import type { ApiTask, Priority } from "@/lib/mock-data";
 import { formatTicketId, isOverdue } from "@/lib/task-utils";
 import { usePriorityLabel } from "@/i18n/use-labels";
+import { useMembers } from "@/hooks/useProjects";
+import { AssigneeAvatar } from "@/components/dashboard/AssigneeAvatar";
 
 const priorityStyles: Record<Priority, string> = {
   low: "bg-slate-100 text-slate-600",
@@ -21,6 +24,8 @@ interface TaskCardProps {
 
 export function TaskCard({ task, onDragStart, onEdit, onDelete }: TaskCardProps) {
   const { t } = useTranslation();
+  const { userId } = useAuth();
+  const { data: members = [] } = useMembers();
   const priorityLabel = usePriorityLabel();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -35,6 +40,8 @@ export function TaskCard({ task, onDragStart, onEdit, onDelete }: TaskCardProps)
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, [menuOpen]);
+
+  const showAssignee = Boolean(task.assigneeUserId || task.assignee);
 
   return (
     <div
@@ -81,18 +88,8 @@ export function TaskCard({ task, onDragStart, onEdit, onDelete }: TaskCardProps)
           )}
         </div>
       </div>
-      <p className="text-sm font-medium leading-snug text-foreground">{task.title}</p>
-      {task.tag && (
-        <span
-          className={cn(
-            "mt-2 inline-block rounded px-1.5 py-0.5 text-[10px] font-medium",
-            task.tagColor,
-          )}
-        >
-          {task.tag}
-        </span>
-      )}
-      <div className="mt-3 flex items-center justify-between">
+      <p className="mb-3 text-sm font-medium leading-snug text-foreground">{task.title}</p>
+      <div className="flex items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">
           {task.priority && (
             <span
@@ -122,16 +119,23 @@ export function TaskCard({ task, onDragStart, onEdit, onDelete }: TaskCardProps)
             </span>
           )}
         </div>
-        {task.assignee && (
-          <div
-            className={cn(
-              "flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-semibold text-white",
-              task.assignee.color,
-            )}
-          >
-            {task.assignee.initials}
-          </div>
-        )}
+        {showAssignee &&
+          (task.assigneeUserId ? (
+            <AssigneeAvatar
+              userId={task.assigneeUserId}
+              members={members}
+              currentUserId={userId}
+            />
+          ) : task.assignee ? (
+            <div
+              className={cn(
+                "flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-semibold text-white",
+                task.assignee.color,
+              )}
+            >
+              {task.assignee.initials}
+            </div>
+          ) : null)}
       </div>
     </div>
   );

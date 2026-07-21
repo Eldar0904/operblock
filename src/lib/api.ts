@@ -1,5 +1,14 @@
 import type { ApiProject, ApiTask, TaskStatus } from "@/lib/mock-data";
 
+export interface ApiMember {
+  id: string;
+  firstName: string | null;
+  lastName: string | null;
+  fullName: string | null;
+  email: string | null;
+  imageUrl: string | null;
+}
+
 const API_BASE = import.meta.env.VITE_API_URL ?? "/api";
 
 export class ApiError extends Error {
@@ -48,6 +57,12 @@ export const api = {
 
   getProjects: (token: string | null) =>
     request<ApiProject[]>("/projects", {}, token),
+
+  getDailyProject: (token: string | null) =>
+    request<ApiProject>("/projects/daily", {}, token),
+
+  getMembers: (token: string | null) =>
+    request<ApiMember[]>("/members", {}, token),
 
   createProject: (token: string | null, data: { name: string; orgId?: string }) =>
     request<ApiProject>("/projects", { method: "POST", body: JSON.stringify(data) }, token),

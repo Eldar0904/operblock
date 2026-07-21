@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react";
+﻿import { useMemo, useState } from "react";
 import { FolderKanban, Plus, Search, Trash2 } from "lucide-react";
-import { useSearchParams, useOutletContext } from "react-router-dom";
+import { useSearchParams, useOutletContext, useLocation, useNavigate } from "react-router-dom";
 import { useAuth, UserButton } from "@clerk/clerk-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,7 @@ import {
   useUpdateTaskStatus,
   useDeleteTask,
 } from "@/hooks/useTasks";
-import { useCreateProject, useDeleteProject } from "@/hooks/useProjects";
+import { useCreateProject, useDailyProject, useDeleteProject, useMembers } from "@/hooks/useProjects";
 import type { ApiTask, Priority, TaskStatus } from "@/lib/mock-data";
 import { filterTasks } from "@/lib/task-utils";
 import { BoardView } from "@/components/dashboard/BoardView";
@@ -38,8 +38,14 @@ function paramToView(param: string | null): ViewTabKey {
 export default function ProjectsPage() {
   const { t } = useTranslation();
   const { showToast } = useToast();
-  const { activeProject } = useOutletContext<DashboardOutletContext>();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const isDailyRoute = location.pathname.includes("/daily");
+  const { activeProject: selectedProject } = useOutletContext<DashboardOutletContext>();
+  const { data: dailyProject, isLoading: dailyLoading } = useDailyProject();
+  const activeProject = isDailyRoute ? dailyProject : selectedProject;
   const { userId } = useAuth();
+  const { data: members = [] } = useMembers();
   const [searchParams, setSearchParams] = useSearchParams();
   const activeView = paramToView(searchParams.get("view"));
 
@@ -85,8 +91,6 @@ export default function ProjectsPage() {
   };
 
   const handleModalSubmit = (form: TaskFormData) => {
-    const assigneeUserId = form.assignToMe && userId ? userId : null;
-
     if (editingTask) {
       updateTask.mutate(
         {
@@ -96,7 +100,7 @@ export default function ProjectsPage() {
           status: form.status,
           priority: form.priority || null,
           dueDate: form.dueDate || null,
-          assigneeUserId,
+          assigneeUserId: form.assigneeUserId,
         },
         { onSuccess: () => setModalOpen(false) },
       );
@@ -109,7 +113,7 @@ export default function ProjectsPage() {
           status: form.status || defaultStatus,
           priority: form.priority || undefined,
           dueDate: form.dueDate || undefined,
-          assigneeUserId: assigneeUserId ?? undefined,
+          assigneeUserId: form.assigneeUserId ?? undefined,
         },
         { onSuccess: () => setModalOpen(false) },
       );
@@ -125,12 +129,8 @@ export default function ProjectsPage() {
   };
 
   const handleDeleteProject = () => {
-    if (!activeProject) return;
-    if (
-      window.confirm(
-        t("projects.deleteProjectConfirm", { name: activeProject.name }),
-      )
-    ) {
+    if (!activeProject || isDailyRoute) return;
+    if (window.confirm(t("projects.deleteProjectConfirm", { name: activeProject.name }))) {
       deleteProject.mutate(activeProject.id);
     }
   };
@@ -142,7 +142,11 @@ export default function ProjectsPage() {
     createProject.mutate(
       { name },
       {
-        onSuccess: () => setNewProjectName(""),
+        onSuccess: (project) => {
+          setNewProjectName("");
+          navigate("/dashboard/projects");
+          localStorage.setItem("operblock-active-project", project.id);
+        },
         onError: () => showToast(t("tasks.somethingWrong"), "error"),
       },
     );
@@ -159,8 +163,9 @@ export default function ProjectsPage() {
   };
 
   const isSubmitting = createTask.isPending || updateTask.isPending;
+  const pageLoading = isDailyRoute ? dailyLoading || isLoading : isLoading;
 
-  if (!activeProject) {
+  if (!isDailyRoute && !activeProject) {
     return (
       <>
         <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-background px-6">
@@ -204,15 +209,18 @@ export default function ProjectsPage() {
     );
   }
 
+  const title = isDailyRoute ? t("daily.title") : activeProject?.name ?? t("projects.defaultName");
+  const breadcrumb = isDailyRoute
+    ? t("daily.subtitle")
+    : t("projects.breadcrumb", { name: activeProject?.name ?? "" });
+
   return (
     <>
       <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-background px-6">
         <div>
-          <p className="text-xs text-muted-foreground">
-            {t("projects.breadcrumb", { name: activeProject.name })}
-          </p>
+          <p className="text-xs text-muted-foreground">{breadcrumb}</p>
           <h1 className="text-base font-semibold">
-            {activeProject.name}
+            {title}
             {isFetching && (
               <span className="ml-2 text-xs font-normal text-muted-foreground">{t("common.syncing")}</span>
             )}
@@ -254,20 +262,23 @@ export default function ProjectsPage() {
         <div className="flex items-center gap-2 py-2">
           <PriorityFilter value={priorityFilter} onChange={setPriorityFilter} />
           <MembersDropdown />
-          <Button
-            size="sm"
-            variant="outline"
-            className="text-red-600 hover:bg-red-50 hover:text-red-700"
-            onClick={handleDeleteProject}
-            disabled={deleteProject.isPending}
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-            {t("projects.deleteProject")}
-          </Button>
+          {!isDailyRoute && activeProject && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-red-600 hover:bg-red-50 hover:text-red-700"
+              onClick={handleDeleteProject}
+              disabled={deleteProject.isPending}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              {t("projects.deleteProject")}
+            </Button>
+          )}
           <Button
             size="sm"
             className="bg-indigo-600 hover:bg-indigo-700"
             onClick={() => openAddModal()}
+            disabled={!activeProject}
           >
             <Plus className="h-3.5 w-3.5" />
             {t("projects.addTask")}
@@ -276,7 +287,7 @@ export default function ProjectsPage() {
       </div>
 
       <div className="flex-1 overflow-auto p-6">
-        {isLoading ? (
+        {pageLoading ? (
           <div className="flex h-full items-center justify-center">
             <p className="text-sm text-muted-foreground">{t("projects.loadingTasks")}</p>
           </div>
@@ -300,7 +311,10 @@ export default function ProjectsPage() {
         ) : activeView === "list" ? (
           <ListView tasks={filteredTasks} onEdit={openEditModal} onDelete={handleDelete} />
         ) : activeView === "overview" ? (
-          <OverviewView tasks={filteredTasks} title={t("overview.projectTitle")} />
+          <OverviewView
+            tasks={filteredTasks}
+            title={isDailyRoute ? t("daily.overviewTitle") : t("overview.projectTitle")}
+          />
         ) : activeView === "timeline" ? (
           <TimelineView tasks={filteredTasks} onEdit={openEditModal} />
         ) : (
@@ -316,6 +330,8 @@ export default function ProjectsPage() {
         defaultStatus={defaultStatus}
         isSubmitting={isSubmitting}
         currentUserId={userId ?? undefined}
+        members={members}
+        defaultAssigneeToMe={isDailyRoute}
       />
     </>
   );

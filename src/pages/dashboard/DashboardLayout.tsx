@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import {
   BarChart3,
   Building2,
+  CalendarDays,
   FolderKanban,
   Inbox,
   LayoutDashboard,
@@ -11,17 +12,19 @@ import {
   Settings,
   Target,
 } from "lucide-react";
-import { Link, NavLink, Outlet } from "react-router-dom";
+import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
-import { useCreateProject, useProjects } from "@/hooks/useProjects";
+import { useCreateProject, useDailyProject, useProjects } from "@/hooks/useProjects";
 import type { ApiProject } from "@/lib/mock-data";
 
 const ACTIVE_PROJECT_KEY = "operblock-active-project";
 
 export default function DashboardLayout() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { data: projects = [], isLoading } = useProjects();
+  useDailyProject();
   const createProject = useCreateProject();
   const [activeProjectId, setActiveProjectId] = useState<string | null>(() =>
     localStorage.getItem(ACTIVE_PROJECT_KEY),
@@ -52,6 +55,7 @@ export default function DashboardLayout() {
   const selectProject = (project: ApiProject) => {
     setActiveProjectId(project.id);
     localStorage.setItem(ACTIVE_PROJECT_KEY, project.id);
+    navigate("/dashboard/projects");
   };
 
   const handleCreateProject = (e: React.FormEvent) => {
@@ -66,6 +70,7 @@ export default function DashboardLayout() {
           setCreating(false);
           setActiveProjectId(project.id);
           localStorage.setItem(ACTIVE_PROJECT_KEY, project.id);
+          navigate("/dashboard/projects");
         },
       },
     );
@@ -73,6 +78,7 @@ export default function DashboardLayout() {
 
   const navItems = [
     { icon: LayoutDashboard, label: t("nav.dashboard"), to: "/dashboard" },
+    { icon: CalendarDays, label: t("nav.daily"), to: "/dashboard/daily" },
     { icon: List, label: t("nav.myTasks"), to: "/dashboard/my-tasks" },
     { icon: Inbox, label: t("nav.inbox"), to: "/dashboard/inbox" },
     { icon: Target, label: t("nav.goals"), to: "/dashboard/goals" },
@@ -223,5 +229,5 @@ export default function DashboardLayout() {
 }
 
 export interface DashboardOutletContext {
-  activeProject?: { id: string; name: string };
+  activeProject?: { id: string; name: string; isPersonal?: boolean };
 }

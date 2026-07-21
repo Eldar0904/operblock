@@ -1,10 +1,13 @@
 import { Calendar, Pencil, Trash2 } from "lucide-react";
+import { useAuth } from "@clerk/clerk-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { ApiTask, Priority } from "@/lib/mock-data";
 import { formatTicketId, isOverdue, statusLabel } from "@/lib/task-utils";
 import { usePriorityLabel } from "@/i18n/use-labels";
+import { useMembers } from "@/hooks/useProjects";
+import { AssigneeAvatar } from "@/components/dashboard/AssigneeAvatar";
 
 const priorityStyles: Record<Priority, string> = {
   low: "bg-slate-100 text-slate-600",
@@ -20,6 +23,8 @@ interface ListViewProps {
 
 export function ListView({ tasks, onEdit, onDelete }: ListViewProps) {
   const { t } = useTranslation();
+  const { userId } = useAuth();
+  const { data: members = [] } = useMembers();
   const priorityLabel = usePriorityLabel();
 
   if (tasks.length === 0) {
@@ -40,6 +45,7 @@ export function ListView({ tasks, onEdit, onDelete }: ListViewProps) {
             <th className="px-4 py-3 font-medium text-muted-foreground">{t("list.status")}</th>
             <th className="px-4 py-3 font-medium text-muted-foreground">{t("list.priority")}</th>
             <th className="px-4 py-3 font-medium text-muted-foreground">{t("list.dueDate")}</th>
+            <th className="px-4 py-3 font-medium text-muted-foreground">{t("list.assignee")}</th>
             <th className="px-4 py-3 font-medium text-muted-foreground">{t("list.actions")}</th>
           </tr>
         </thead>
@@ -82,6 +88,14 @@ export function ListView({ tasks, onEdit, onDelete }: ListViewProps) {
                 ) : (
                   <span className="text-muted-foreground">—</span>
                 )}
+              </td>
+              <td className="px-4 py-3">
+                <AssigneeAvatar
+                  userId={task.assigneeUserId}
+                  members={members}
+                  currentUserId={userId}
+                  showLabel
+                />
               </td>
               <td className="px-4 py-3">
                 <div className="flex gap-1">

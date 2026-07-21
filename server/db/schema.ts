@@ -5,6 +5,7 @@ import {
   uuid,
   primaryKey,
   pgEnum,
+  boolean,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
@@ -31,6 +32,7 @@ export const projects = pgTable("projects", {
     .notNull()
     .references(() => organizations.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
+  isPersonal: boolean("is_personal").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 

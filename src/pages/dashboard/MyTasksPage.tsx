@@ -1,28 +1,30 @@
 import { useMemo, useState } from "react";
 import { Plus, Search } from "lucide-react";
 import { useAuth, UserButton } from "@clerk/clerk-react";
-import { useOutletContext } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
-  useTasks,
+  useAllTasks,
   useCreateTask,
   useUpdateTask,
   useDeleteTask,
 } from "@/hooks/useTasks";
+import { useDailyProject, useMembers } from "@/hooks/useProjects";
 import type { ApiTask, Priority } from "@/lib/mock-data";
 import { filterTasks } from "@/lib/task-utils";
 import { ListView } from "@/components/dashboard/ListView";
 import { TaskModal, type TaskFormData } from "@/components/dashboard/TaskModal";
 import { NotificationsDropdown } from "@/components/dashboard/NotificationsDropdown";
 import { PriorityFilter } from "@/components/dashboard/PriorityFilter";
-import type { DashboardOutletContext } from "@/pages/dashboard/DashboardLayout";
+import { useToast } from "@/components/ui/toast";
 
 export default function MyTasksPage() {
   const { t } = useTranslation();
-  const { activeProject } = useOutletContext<DashboardOutletContext>();
+  const { showToast } = useToast();
   const { userId } = useAuth();
-  const { data: tasks = [], isLoading, isError } = useTasks(activeProject?.id);
+  const { data: dailyProject, isLoading: dailyLoading } = useDailyProject();
+  const { data: members = [] } = useMembers();
+  const { data: tasks = [], isLoading, isError } = useAllTasks();
   const createTask = useCreateTask();
   const updateTask = useUpdateTask();
   const deleteTask = useDeleteTask();
@@ -32,12 +34,12 @@ export default function MyTasksPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<ApiTask | null>(null);
 
-  const hasAssignees = tasks.some((task) => task.assigneeUserId);
   const myTasks = useMemo(() => {
-    const base =
-      userId && hasAssignees ? tasks.filter((task) => task.assigneeUserId === userId) : tasks;
-    return filterTasks(base, { search, priority: priorityFilter });
-  }, [tasks, userId, hasAssignees, search, priorityFilter]);
+    const assigned = userId
+      ? tasks.filter((task) => task.assigneeUserId === userId)
+      : [];
+    return filterTasks(assigned, { search, priority: priorityFilter });
+  }, [tasks, userId, search, priorityFilter]);
 
   const openEditModal = (task: ApiTask) => {
     setEditingTask(task);
@@ -45,8 +47,6 @@ export default function MyTasksPage() {
   };
 
   const handleModalSubmit = (form: TaskFormData) => {
-    const assigneeUserId = form.assignToMe && userId ? userId : null;
-
     if (editingTask) {
       updateTask.mutate(
         {
@@ -56,23 +56,25 @@ export default function MyTasksPage() {
           status: form.status,
           priority: form.priority || null,
           dueDate: form.dueDate || null,
-          assigneeUserId,
+          assigneeUserId: form.assigneeUserId,
         },
         { onSuccess: () => setModalOpen(false) },
       );
-    } else if (activeProject) {
+    } else if (dailyProject) {
       createTask.mutate(
         {
-          projectId: activeProject.id,
+          projectId: dailyProject.id,
           title: form.title.trim(),
           description: form.description || undefined,
           status: form.status,
           priority: form.priority || undefined,
           dueDate: form.dueDate || undefined,
-          assigneeUserId: userId ?? undefined,
+          assigneeUserId: form.assigneeUserId ?? userId ?? undefined,
         },
         { onSuccess: () => setModalOpen(false) },
       );
+    } else {
+      showToast(t("tasks.somethingWrong"), "error");
     }
   };
 
@@ -81,6 +83,8 @@ export default function MyTasksPage() {
       deleteTask.mutate(task.id);
     }
   };
+
+  const loading = dailyLoading || isLoading;
 
   return (
     <>
@@ -107,15 +111,14 @@ export default function MyTasksPage() {
 
       <div className="flex items-center justify-between border-b border-border bg-background px-6 py-2">
         <p className="text-sm text-muted-foreground">
-          {!hasAssignees
-            ? t("myTasks.allNote")
-            : t("myTasks.assignedCount", { count: myTasks.length })}
+          {t("myTasks.assignedCount", { count: myTasks.length })}
         </p>
         <div className="flex items-center gap-2">
           <PriorityFilter value={priorityFilter} onChange={setPriorityFilter} />
           <Button
             size="sm"
             className="bg-indigo-600 hover:bg-indigo-700"
+            disabled={!dailyProject}
             onClick={() => {
               setEditingTask(null);
               setModalOpen(true);
@@ -128,7 +131,7 @@ export default function MyTasksPage() {
       </div>
 
       <div className="flex-1 overflow-auto p-6">
-        {isLoading ? (
+        {loading ? (
           <p className="text-sm text-muted-foreground">{t("myTasks.loading")}</p>
         ) : isError ? (
           <p className="text-sm text-red-600">{t("myTasks.loadError")}</p>
@@ -144,6 +147,8 @@ export default function MyTasksPage() {
         task={editingTask}
         isSubmitting={createTask.isPending || updateTask.isPending}
         currentUserId={userId ?? undefined}
+        members={members}
+        defaultAssigneeToMe
       />
     </>
   );
