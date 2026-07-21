@@ -1,12 +1,20 @@
 import { UserButton } from "@clerk/clerk-react";
 import { useTranslation } from "react-i18next";
-import { useAllTasks } from "@/hooks/useTasks";
-import { OverviewView } from "@/components/dashboard/OverviewView";
+import { MomentumDashboard } from "@/components/dashboard/MomentumDashboard";
 import { NotificationsDropdown } from "@/components/dashboard/NotificationsDropdown";
+import { useGoals } from "@/hooks/useGoals";
+import { useDailyProject } from "@/hooks/useProjects";
+import { useReports } from "@/hooks/useReports";
+import { useAllTasks } from "@/hooks/useTasks";
 
 export default function OverviewPage() {
   const { t } = useTranslation();
-  const { data: tasks = [], isLoading, isError } = useAllTasks();
+  const { data: tasks = [], isLoading: tasksLoading, isError: tasksError } = useAllTasks();
+  const { data: dailyProject, isLoading: dailyLoading } = useDailyProject();
+  const { data: goals = [], isLoading: goalsLoading } = useGoals();
+  const { data: weekReport, isLoading: reportsLoading } = useReports("week");
+
+  const isLoading = tasksLoading || dailyLoading || goalsLoading;
 
   return (
     <>
@@ -24,10 +32,16 @@ export default function OverviewPage() {
       <div className="flex-1 overflow-auto p-6">
         {isLoading ? (
           <p className="text-sm text-muted-foreground">{t("overview.loadingStats")}</p>
-        ) : isError ? (
+        ) : tasksError ? (
           <p className="text-sm text-red-600">{t("overview.loadError")}</p>
         ) : (
-          <OverviewView tasks={tasks} title={t("overview.workspaceTitle")} />
+          <MomentumDashboard
+            tasks={tasks}
+            dailyProjectId={dailyProject?.id}
+            goals={goals}
+            weekReport={weekReport}
+            reportsLoading={reportsLoading}
+          />
         )}
       </div>
     </>
