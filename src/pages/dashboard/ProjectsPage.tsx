@@ -20,6 +20,7 @@ import { ListView } from "@/components/dashboard/ListView";
 import { OverviewView } from "@/components/dashboard/OverviewView";
 import { TimelineView } from "@/components/dashboard/TimelineView";
 import { FilesView } from "@/components/dashboard/FilesView";
+import { DailyPersonBoard } from "@/components/dashboard/DailyPersonBoard";
 import { TaskModal, type TaskFormData } from "@/components/dashboard/TaskModal";
 import { NotificationsDropdown } from "@/components/dashboard/NotificationsDropdown";
 import { MembersDropdown } from "@/components/dashboard/MembersDropdown";
@@ -64,6 +65,9 @@ export default function ProjectsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<ApiTask | null>(null);
   const [defaultStatus, setDefaultStatus] = useState<TaskStatus>("todo");
+  const [defaultAssigneeUserId, setDefaultAssigneeUserId] = useState<string | null | undefined>(
+    undefined,
+  );
   const [newProjectName, setNewProjectName] = useState("");
 
   const filteredTasks = useMemo(
@@ -75,18 +79,20 @@ export default function ProjectsPage() {
     setSearchParams({ view }, { replace: true });
   };
 
-  const openAddModal = (status: TaskStatus = "todo") => {
+  const openAddModal = (status: TaskStatus = "todo", assigneeUserId?: string | null) => {
     if (!activeProject) {
       showToast(t("projects.needProjectFirst"), "error");
       return;
     }
     setEditingTask(null);
     setDefaultStatus(status);
+    setDefaultAssigneeUserId(assigneeUserId);
     setModalOpen(true);
   };
 
   const openEditModal = (task: ApiTask) => {
     setEditingTask(task);
+    setDefaultAssigneeUserId(undefined);
     setModalOpen(true);
   };
 
@@ -160,6 +166,21 @@ export default function ProjectsPage() {
     }
     setDraggingTaskId(null);
     setDropTarget(null);
+  };
+
+  const handleToggleDone = (task: ApiTask, done: boolean) => {
+    const nextStatus: TaskStatus = done ? "done" : "todo";
+    if (task.status === nextStatus) return;
+    updateStatus.mutate({ id: task.id, status: nextStatus });
+  };
+
+  const handleReassign = (task: ApiTask, assigneeUserId: string | null) => {
+    if ((task.assigneeUserId ?? null) === assigneeUserId) return;
+    updateTask.mutate({ id: task.id, assigneeUserId });
+  };
+
+  const handleAddToPersonColumn = (assigneeUserId: string | null) => {
+    openAddModal("todo", assigneeUserId);
   };
 
   const isSubmitting = createTask.isPending || updateTask.isPending;
@@ -243,22 +264,26 @@ export default function ProjectsPage() {
       </header>
 
       <div className="flex items-center justify-between border-b border-border bg-background px-6">
-        <div className="flex gap-1">
-          {VIEW_TAB_KEYS.map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setView(tab)}
-              className={cn(
-                "border-b-2 px-3 py-3 text-sm font-medium transition-colors",
-                activeView === tab
-                  ? "border-indigo-600 text-indigo-600"
-                  : "border-transparent text-muted-foreground hover:text-foreground",
-              )}
-            >
-              {t(`views.${tab}`)}
-            </button>
-          ))}
-        </div>
+        {!isDailyRoute ? (
+          <div className="flex gap-1">
+            {VIEW_TAB_KEYS.map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setView(tab)}
+                className={cn(
+                  "border-b-2 px-3 py-3 text-sm font-medium transition-colors",
+                  activeView === tab
+                    ? "border-indigo-600 text-indigo-600"
+                    : "border-transparent text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {t(`views.${tab}`)}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div />
+        )}
         <div className="flex items-center gap-2 py-2">
           <PriorityFilter value={priorityFilter} onChange={setPriorityFilter} />
           <MembersDropdown />
@@ -295,6 +320,17 @@ export default function ProjectsPage() {
           <div className="flex h-full items-center justify-center">
             <p className="text-sm text-red-600">{t("projects.loadError")}</p>
           </div>
+        ) : isDailyRoute ? (
+          <DailyPersonBoard
+            tasks={filteredTasks}
+            members={members}
+            currentUserId={userId}
+            onToggleDone={handleToggleDone}
+            onReassign={handleReassign}
+            onEdit={openEditModal}
+            onDelete={handleDelete}
+            onAddToColumn={handleAddToPersonColumn}
+          />
         ) : activeView === "board" ? (
           <div className="h-full min-h-[400px] overflow-x-auto">
             <BoardView
@@ -311,10 +347,7 @@ export default function ProjectsPage() {
         ) : activeView === "list" ? (
           <ListView tasks={filteredTasks} onEdit={openEditModal} onDelete={handleDelete} />
         ) : activeView === "overview" ? (
-          <OverviewView
-            tasks={filteredTasks}
-            title={isDailyRoute ? t("daily.overviewTitle") : t("overview.projectTitle")}
-          />
+          <OverviewView tasks={filteredTasks} title={t("overview.projectTitle")} />
         ) : activeView === "timeline" ? (
           <TimelineView tasks={filteredTasks} onEdit={openEditModal} />
         ) : (
@@ -331,7 +364,9 @@ export default function ProjectsPage() {
         isSubmitting={isSubmitting}
         currentUserId={userId ?? undefined}
         members={members}
-        defaultAssigneeToMe={isDailyRoute}
+        defaultAssigneeToMe={isDailyRoute && defaultAssigneeUserId === undefined}
+        defaultAssigneeUserId={isDailyRoute ? defaultAssigneeUserId : undefined}
+        hideStatus={isDailyRoute}
       />
     </>
   );

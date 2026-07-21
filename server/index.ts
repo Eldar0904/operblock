@@ -9,6 +9,7 @@ import projectsRouter from "./routes/projects.js";
 import tasksRouter from "./routes/tasks.js";
 import reportsRouter from "./routes/reports.js";
 import membersRouter from "./routes/members.js";
+import commentsRouter, { taskCommentsRouter } from "./routes/comments.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const distPath = path.resolve(__dirname, "../dist");
@@ -37,6 +38,8 @@ app.get("/api/health", async (_req, res) => {
 if (clerkConfigured) {
   app.use("/api/projects", clerkAuth, projectsRouter);
   app.use("/api/tasks", clerkAuth, tasksRouter);
+  app.use("/api/tasks/:taskId/comments", clerkAuth, taskCommentsRouter);
+  app.use("/api/comments", clerkAuth, commentsRouter);
   app.use("/api/reports", clerkAuth, reportsRouter);
   app.use("/api/members", clerkAuth, membersRouter);
 } else {
@@ -45,6 +48,8 @@ if (clerkConfigured) {
   );
   app.use("/api/projects", projectsRouter);
   app.use("/api/tasks", tasksRouter);
+  app.use("/api/tasks/:taskId/comments", taskCommentsRouter);
+  app.use("/api/comments", commentsRouter);
   app.use("/api/reports", reportsRouter);
   app.use("/api/members", membersRouter);
 }

@@ -178,7 +178,22 @@
   "daily": {
     "title": "Күнделікті",
     "subtitle": "Команданың ортақ тақтасы",
-    "overviewTitle": "Күнделікті тапсырмаларға шолу"
+    "overviewTitle": "Күнделікті тапсырмаларға шолу",
+    "emptyChecklist": "Күнделікті тапсырмалар жоқ. Біріншісін қосыңыз.",
+    "markDone": "Орындалған деп белгілеу",
+    "markOpen": "Ашыққа қайтару",
+    "openSection": "Ашық",
+    "completedSection": "Дайын",
+    "unassigned": "Тағайындалмаған",
+    "addForPerson": "Бағанға тапсырма қосу"
+  },
+  "comments": {
+    "title": "Пікірлер",
+    "addComment": "Жіберу",
+    "noComments": "Пікірлер әлі жоқ",
+    "commentPlaceholder": "Пікір жазыңыз…",
+    "added": "Пікір қосылды",
+    "deleted": "Пікір жойылды"
   },
   "goals": {
     "title": "Мақсаттар",

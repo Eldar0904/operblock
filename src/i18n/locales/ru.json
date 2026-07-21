@@ -177,7 +177,22 @@
   "daily": {
     "title": "Ежедневные",
     "subtitle": "Общая доска команды",
-    "overviewTitle": "Обзор ежедневных задач"
+    "overviewTitle": "Обзор ежедневных задач",
+    "emptyChecklist": "Нет ежедневных задач. Добавьте первую.",
+    "markDone": "Отметить выполненной",
+    "markOpen": "Вернуть в открытые",
+    "openSection": "Открытые",
+    "completedSection": "Готово",
+    "unassigned": "Не назначены",
+    "addForPerson": "Добавить задачу в колонку"
+  },
+  "comments": {
+    "title": "Комментарии",
+    "addComment": "Отправить",
+    "noComments": "Пока нет комментариев",
+    "commentPlaceholder": "Напишите комментарий…",
+    "added": "Комментарий добавлен",
+    "deleted": "Комментарий удалён"
   },
   "goals": {
     "title": "Цели",

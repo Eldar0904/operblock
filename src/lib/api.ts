@@ -9,6 +9,14 @@ export interface ApiMember {
   imageUrl: string | null;
 }
 
+export interface ApiComment {
+  id: string;
+  taskId: string;
+  userId: string;
+  content: string;
+  createdAt: string;
+}
+
 const API_BASE = import.meta.env.VITE_API_URL ?? "/api";
 
 export class ApiError extends Error {
@@ -106,6 +114,19 @@ export const api = {
 
   deleteTask: (token: string | null, id: string) =>
     request<void>(`/tasks/${id}`, { method: "DELETE" }, token),
+
+  getComments: (token: string | null, taskId: string) =>
+    request<ApiComment[]>(`/tasks/${taskId}/comments`, {}, token),
+
+  createComment: (token: string | null, taskId: string, content: string) =>
+    request<ApiComment>(
+      `/tasks/${taskId}/comments`,
+      { method: "POST", body: JSON.stringify({ content }) },
+      token,
+    ),
+
+  deleteComment: (token: string | null, id: string) =>
+    request<void>(`/comments/${id}`, { method: "DELETE" }, token),
 
   getReportSummary: (
     token: string | null,
