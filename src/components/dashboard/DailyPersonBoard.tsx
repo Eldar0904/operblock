@@ -58,7 +58,8 @@ export function DailyPersonBoard({
     ...new Set(
       tasks
         .map((task) => task.assigneeUserId)
-        .filter((id): id is string => Boolean(id) && !memberIds.has(id)),
+        .filter((id): id is string => typeof id === "string" && id.length > 0)
+        .filter((id) => !memberIds.has(id)),
     ),
   ];
   for (const id of orphanIds) {
