@@ -80,7 +80,9 @@
     "addTask": "Тапсырма қосу",
     "loadingTasks": "Тапсырмалар жүктелуде…",
     "loadError": "Тапсырмалар жүктелмedi. Бетті жаңартыңыз.",
-    "deleteConfirm": "«{{title}}» жою керек пе?"
+    "deleteConfirm": "«{{title}}» жою керек пе?",
+    "deleteProject": "Жобаны жою",
+    "deleteProjectConfirm": "«{{name}}» жобасын және барлық тапсырмаларды жою керек пе? Бұл әрекетті қайтару мүмкін емес."
   },
   "tasks": {
     "addTask": "Тапсырма қосу",

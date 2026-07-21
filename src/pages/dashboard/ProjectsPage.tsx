@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, Trash2 } from "lucide-react";
 import { useSearchParams, useOutletContext } from "react-router-dom";
 import { useAuth, UserButton } from "@clerk/clerk-react";
 import { useTranslation } from "react-i18next";
@@ -12,6 +12,7 @@ import {
   useUpdateTaskStatus,
   useDeleteTask,
 } from "@/hooks/useTasks";
+import { useDeleteProject } from "@/hooks/useProjects";
 import type { ApiTask, Priority, TaskStatus } from "@/lib/mock-data";
 import { filterTasks } from "@/lib/task-utils";
 import { BoardView } from "@/components/dashboard/BoardView";
@@ -45,6 +46,7 @@ export default function ProjectsPage() {
   const updateTask = useUpdateTask();
   const updateStatus = useUpdateTaskStatus();
   const deleteTask = useDeleteTask();
+  const deleteProject = useDeleteProject();
 
   const [search, setSearch] = useState("");
   const [priorityFilter, setPriorityFilter] = useState<Priority | "all">("all");
@@ -112,6 +114,17 @@ export default function ProjectsPage() {
     }
   };
 
+  const handleDeleteProject = () => {
+    if (!activeProject) return;
+    if (
+      window.confirm(
+        t("projects.deleteProjectConfirm", { name: activeProject.name }),
+      )
+    ) {
+      deleteProject.mutate(activeProject.id);
+    }
+  };
+
   const handleDrop = (status: TaskStatus) => {
     if (!draggingTaskId) return;
     const task = tasks.find((t) => t.id === draggingTaskId);
@@ -174,6 +187,18 @@ export default function ProjectsPage() {
         <div className="flex items-center gap-2 py-2">
           <PriorityFilter value={priorityFilter} onChange={setPriorityFilter} />
           <MembersDropdown />
+          {activeProject && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-red-600 hover:bg-red-50 hover:text-red-700"
+              onClick={handleDeleteProject}
+              disabled={deleteProject.isPending}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              {t("projects.deleteProject")}
+            </Button>
+          )}
           <Button
             size="sm"
             className="bg-indigo-600 hover:bg-indigo-700"

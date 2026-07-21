@@ -80,7 +80,9 @@
     "addTask": "Добавить задачу",
     "loadingTasks": "Загрузка задач…",
     "loadError": "Не удалось загрузить задачи. Обновите страницу.",
-    "deleteConfirm": "Удалить «{{title}}»?"
+    "deleteConfirm": "Удалить «{{title}}»?",
+    "deleteProject": "Удалить проект",
+    "deleteProjectConfirm": "Удалить проект «{{name}}» и все его задачи? Это нельзя отменить."
   },
   "tasks": {
     "addTask": "Добавить задачу",
