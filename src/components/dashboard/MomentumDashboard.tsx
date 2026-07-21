@@ -6,12 +6,10 @@ import {
   CheckCircle2,
   FolderKanban,
   Sparkles,
-  Target,
   TrendingUp,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
-import type { ApiGoal } from "@/lib/api";
 import type { ApiTask } from "@/lib/mock-data";
 import type { ReportSummary } from "@/lib/api";
 import {
@@ -24,7 +22,6 @@ import { useReportFormatters } from "@/i18n/use-labels";
 interface MomentumDashboardProps {
   tasks: ApiTask[];
   dailyProjectId?: string;
-  goals: ApiGoal[];
   weekReport?: ReportSummary;
   reportsLoading?: boolean;
 }
@@ -32,7 +29,6 @@ interface MomentumDashboardProps {
 export function MomentumDashboard({
   tasks,
   dailyProjectId,
-  goals,
   weekReport,
   reportsLoading,
 }: MomentumDashboardProps) {
@@ -56,8 +52,6 @@ export function MomentumDashboard({
   const projectWins = weekReport?.completedProjects ?? 0;
   const totalWins = dailyWins + projectWins;
   const weekDelta = weekReport?.deltaCompleted;
-
-  const topGoals = goals.slice(0, 4);
 
   return (
     <div className="space-y-8">
@@ -146,7 +140,7 @@ export function MomentumDashboard({
           icon={FolderKanban}
           iconAccent="text-sky-600 bg-sky-50"
           metrics={[
-            { label: t("momentum.open"), value: projectsHealth.open },
+            { label: t("momentum.openTasks"), value: projectsHealth.open },
             { label: t("momentum.inReview"), value: projectsHealth.inReview },
             {
               label: t("momentum.completion"),
@@ -159,57 +153,6 @@ export function MomentumDashboard({
             },
           ]}
         />
-      </section>
-
-      <section className="rounded-lg border border-border bg-background p-5">
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <Target className="h-4 w-4 text-indigo-600" />
-            <h3 className="text-sm font-semibold">{t("momentum.goalsPulse")}</h3>
-          </div>
-          <Link
-            to="/dashboard/goals"
-            className="text-xs font-medium text-indigo-600 hover:text-indigo-700"
-          >
-            {t("momentum.allGoals")}
-          </Link>
-        </div>
-
-        {topGoals.length === 0 ? (
-          <div className="rounded-md border border-dashed border-border px-4 py-6 text-center">
-            <p className="text-sm text-muted-foreground">{t("momentum.goalsEmpty")}</p>
-            <Link
-              to="/dashboard/goals"
-              className="mt-2 inline-block text-sm font-medium text-indigo-600 hover:text-indigo-700"
-            >
-              {t("momentum.addFirstGoal")}
-            </Link>
-          </div>
-        ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
-            {topGoals.map((goal) => (
-              <div key={goal.id} className="rounded-md border border-border p-3">
-                <div className="mb-2 flex items-start justify-between gap-2">
-                  <p className="text-sm font-medium leading-snug">{goal.title}</p>
-                  <span className="shrink-0 text-xs font-semibold text-indigo-600">
-                    {goal.progressPercent}%
-                  </span>
-                </div>
-                <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-                  <div
-                    className="h-full rounded-full bg-indigo-500 transition-all"
-                    style={{ width: `${goal.progressPercent}%` }}
-                  />
-                </div>
-                {goal.projects.length > 0 && (
-                  <p className="mt-2 truncate text-[11px] text-muted-foreground">
-                    {goal.projects.map((p) => p.name).join(" · ")}
-                  </p>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
       </section>
     </div>
   );

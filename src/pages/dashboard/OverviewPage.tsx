@@ -2,7 +2,6 @@ import { UserButton } from "@clerk/clerk-react";
 import { useTranslation } from "react-i18next";
 import { MomentumDashboard } from "@/components/dashboard/MomentumDashboard";
 import { NotificationsDropdown } from "@/components/dashboard/NotificationsDropdown";
-import { useGoals } from "@/hooks/useGoals";
 import { useDailyProject } from "@/hooks/useProjects";
 import { useReports } from "@/hooks/useReports";
 import { useAllTasks } from "@/hooks/useTasks";
@@ -11,10 +10,9 @@ export default function OverviewPage() {
   const { t } = useTranslation();
   const { data: tasks = [], isLoading: tasksLoading, isError: tasksError } = useAllTasks();
   const { data: dailyProject, isLoading: dailyLoading } = useDailyProject();
-  const { data: goals = [], isLoading: goalsLoading } = useGoals();
   const { data: weekReport, isLoading: reportsLoading } = useReports("week");
 
-  const isLoading = tasksLoading || dailyLoading || goalsLoading;
+  const isLoading = tasksLoading || dailyLoading;
 
   return (
     <>
@@ -38,7 +36,6 @@ export default function OverviewPage() {
           <MomentumDashboard
             tasks={tasks}
             dailyProjectId={dailyProject?.id}
-            goals={goals}
             weekReport={weekReport}
             reportsLoading={reportsLoading}
           />
