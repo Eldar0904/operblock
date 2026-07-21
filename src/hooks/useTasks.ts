@@ -147,10 +147,12 @@ export function useUpdateTask() {
 
 export function useUpdateTaskStatus() {
   const updateTask = useUpdateTask();
+  type StatusVars = { id: string; status: TaskStatus };
   return {
     ...updateTask,
-    mutate: (vars: { id: string; status: TaskStatus }) => updateTask.mutate(vars),
-    mutateAsync: (vars: { id: string; status: TaskStatus }) => updateTask.mutateAsync(vars),
+    mutate: (vars: StatusVars, options?: Parameters<typeof updateTask.mutate>[1]) =>
+      updateTask.mutate(vars, options),
+    mutateAsync: (vars: StatusVars) => updateTask.mutateAsync(vars),
   };
 }
 

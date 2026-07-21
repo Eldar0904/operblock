@@ -239,5 +239,5 @@ export default function DashboardLayout() {
 }
 
 export interface DashboardOutletContext {
-  activeProject?: { id: string; name: string; isPersonal?: boolean };
+  activeProject?: ApiProject;
 }
