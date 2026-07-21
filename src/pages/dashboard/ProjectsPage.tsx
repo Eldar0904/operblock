@@ -1,6 +1,11 @@
-﻿import { useMemo, useState } from "react";
-import { FolderKanban, Plus, Search, Trash2 } from "lucide-react";
-import { useSearchParams, useOutletContext, useLocation, useNavigate } from "react-router-dom";
+﻿import { useEffect, useMemo, useState } from "react";
+import { Plus, Search, Trash2 } from "lucide-react";
+import {
+  useSearchParams,
+  useLocation,
+  useNavigate,
+  useParams,
+} from "react-router-dom";
 import { useAuth, UserButton } from "@clerk/clerk-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -12,7 +17,12 @@ import {
   useUpdateTaskStatus,
   useDeleteTask,
 } from "@/hooks/useTasks";
-import { useCreateProject, useDailyProject, useDeleteProject, useMembers } from "@/hooks/useProjects";
+import {
+  useDailyProject,
+  useDeleteProject,
+  useMembers,
+  useProjects,
+} from "@/hooks/useProjects";
 import type { ApiTask, Priority, TaskStatus } from "@/lib/mock-data";
 import { filterTasks } from "@/lib/task-utils";
 import { ApiError } from "@/lib/api";
@@ -27,7 +37,6 @@ import { NotificationsDropdown } from "@/components/dashboard/NotificationsDropd
 import { MembersDropdown } from "@/components/dashboard/MembersDropdown";
 import { PriorityFilter } from "@/components/dashboard/PriorityFilter";
 import { useToast } from "@/components/ui/toast";
-import type { DashboardOutletContext } from "@/pages/dashboard/DashboardLayout";
 
 const VIEW_TAB_KEYS = ["overview", "list", "board", "timeline", "files"] as const;
 type ViewTabKey = (typeof VIEW_TAB_KEYS)[number];
@@ -42,10 +51,12 @@ export default function ProjectsPage() {
   const { showToast } = useToast();
   const location = useLocation();
   const navigate = useNavigate();
+  const { projectId } = useParams<{ projectId: string }>();
   const isDailyRoute = location.pathname.includes("/daily");
-  const { activeProject: selectedProject } = useOutletContext<DashboardOutletContext>();
+  const { data: projects = [], isLoading: projectsLoading } = useProjects();
   const { data: dailyProject, isLoading: dailyLoading } = useDailyProject();
-  const activeProject = isDailyRoute ? dailyProject : selectedProject;
+  const routeProject = projects.find((p) => p.id === projectId);
+  const activeProject = isDailyRoute ? dailyProject : routeProject;
   const { userId } = useAuth();
   const { data: members = [] } = useMembers();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -56,7 +67,6 @@ export default function ProjectsPage() {
   const updateTask = useUpdateTask();
   const updateStatus = useUpdateTaskStatus();
   const deleteTask = useDeleteTask();
-  const createProject = useCreateProject();
   const deleteProject = useDeleteProject();
 
   const [search, setSearch] = useState("");
@@ -69,7 +79,13 @@ export default function ProjectsPage() {
   const [defaultAssigneeUserId, setDefaultAssigneeUserId] = useState<string | null | undefined>(
     undefined,
   );
-  const [newProjectName, setNewProjectName] = useState("");
+
+  useEffect(() => {
+    if (isDailyRoute || projectsLoading) return;
+    if (!projectId || !routeProject) {
+      navigate("/dashboard/projects", { replace: true });
+    }
+  }, [isDailyRoute, projectsLoading, projectId, routeProject, navigate]);
 
   const filteredTasks = useMemo(
     () => filterTasks(tasks, { search, priority: priorityFilter }),
@@ -145,6 +161,10 @@ export default function ProjectsPage() {
     }
     if (window.confirm(t("projects.deleteProjectConfirm", { name: activeProject.name }))) {
       deleteProject.mutate(activeProject.id, {
+        onSuccess: () => {
+          localStorage.removeItem("operblock-active-project");
+          navigate("/dashboard/projects");
+        },
         onError: (err) => {
           if (err instanceof ApiError && err.status === 403) {
             showToast(t("projects.deleteForbidden"), "error");
@@ -154,23 +174,6 @@ export default function ProjectsPage() {
         },
       });
     }
-  };
-
-  const handleCreateProject = (e: React.FormEvent) => {
-    e.preventDefault();
-    const name = newProjectName.trim();
-    if (!name) return;
-    createProject.mutate(
-      { name },
-      {
-        onSuccess: (project) => {
-          setNewProjectName("");
-          navigate("/dashboard/projects");
-          localStorage.setItem("operblock-active-project", project.id);
-        },
-        onError: () => showToast(t("tasks.somethingWrong"), "error"),
-      },
-    );
   };
 
   const handleDrop = (status: TaskStatus) => {
@@ -199,15 +202,17 @@ export default function ProjectsPage() {
   };
 
   const isSubmitting = createTask.isPending || updateTask.isPending;
-  const pageLoading = isDailyRoute ? dailyLoading || isLoading : isLoading;
+  const pageLoading = isDailyRoute
+    ? dailyLoading || isLoading
+    : projectsLoading || isLoading;
 
-  if (!isDailyRoute && !activeProject) {
+  if (!isDailyRoute && (projectsLoading || !routeProject)) {
     return (
       <>
         <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-background px-6">
           <div>
             <p className="text-xs text-muted-foreground">{t("nav.projects")}</p>
-            <h1 className="text-base font-semibold">{t("projects.noProjectTitle")}</h1>
+            <h1 className="text-base font-semibold">{t("common.loading")}</h1>
           </div>
           <div className="flex items-center gap-3">
             <NotificationsDropdown />
@@ -215,31 +220,7 @@ export default function ProjectsPage() {
           </div>
         </header>
         <div className="flex flex-1 items-center justify-center p-6">
-          <div className="w-full max-w-md rounded-lg border border-border bg-background p-6 text-center">
-            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-indigo-50 text-indigo-600">
-              <FolderKanban className="h-6 w-6" />
-            </div>
-            <h2 className="text-base font-semibold">{t("projects.noProjectTitle")}</h2>
-            <p className="mt-2 text-sm text-muted-foreground">{t("projects.noProjectDesc")}</p>
-            <form onSubmit={handleCreateProject} className="mt-5 flex gap-2">
-              <input
-                value={newProjectName}
-                onChange={(e) => setNewProjectName(e.target.value)}
-                placeholder={t("projects.newProjectPlaceholder")}
-                className="h-9 flex-1 rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
-                required
-              />
-              <Button
-                type="submit"
-                size="sm"
-                className="bg-indigo-600 hover:bg-indigo-700"
-                disabled={createProject.isPending || !newProjectName.trim()}
-              >
-                <Plus className="h-3.5 w-3.5" />
-                {t("projects.createProject")}
-              </Button>
-            </form>
-          </div>
+          <p className="text-sm text-muted-foreground">{t("projects.loadingTasks")}</p>
         </div>
       </>
     );

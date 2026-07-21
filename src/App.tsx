@@ -8,6 +8,7 @@ import SignUpPage from "@/pages/SignUp";
 
 import DashboardLayout from "@/pages/dashboard/DashboardLayout";
 import OverviewPage from "@/pages/dashboard/OverviewPage";
+import ProjectsHubPage from "@/pages/dashboard/ProjectsHubPage";
 import ProjectsPage from "@/pages/dashboard/ProjectsPage";
 import MyTasksPage from "@/pages/dashboard/MyTasksPage";
 import InboxPage from "@/pages/dashboard/InboxPage";
@@ -25,7 +26,8 @@ export default function App() {
       <Route element={<ProtectedRoute />}>
         <Route path="/dashboard" element={<DashboardLayout />}>
           <Route index element={<OverviewPage />} />
-          <Route path="projects" element={<ProjectsPage />} />
+          <Route path="projects" element={<ProjectsHubPage />} />
+          <Route path="projects/:projectId" element={<ProjectsPage />} />
           <Route path="daily" element={<ProjectsPage />} />
           <Route path="my-tasks" element={<MyTasksPage />} />
           <Route path="inbox" element={<InboxPage />} />

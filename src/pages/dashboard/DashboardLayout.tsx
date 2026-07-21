@@ -18,7 +18,7 @@ import {
   Target,
   Trash2,
 } from "lucide-react";
-import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
+import { Link, NavLink, Outlet, useMatch, useNavigate } from "react-router-dom";
 import { useAuth } from "@clerk/clerk-react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
@@ -77,7 +77,12 @@ export default function DashboardLayout() {
     }
   });
 
+  const projectRouteMatch = useMatch("/dashboard/projects/:projectId");
+  const routeProjectId = projectRouteMatch?.params.projectId ?? null;
+
   useEffect(() => {
+    if (isLoading) return;
+
     if (projects.length === 0) {
       if (activeProjectId) {
         setActiveProjectId(null);
@@ -86,16 +91,22 @@ export default function DashboardLayout() {
       return;
     }
 
-    const stillExists = projects.some((p) => p.id === activeProjectId);
-    if (!stillExists) {
-      const nextId = projects[0].id;
-      setActiveProjectId(nextId);
-      localStorage.setItem(ACTIVE_PROJECT_KEY, nextId);
+    if (routeProjectId && projects.some((p) => p.id === routeProjectId)) {
+      if (activeProjectId !== routeProjectId) {
+        setActiveProjectId(routeProjectId);
+        localStorage.setItem(ACTIVE_PROJECT_KEY, routeProjectId);
+      }
+      return;
     }
-  }, [projects, activeProjectId]);
 
-  const activeProject =
-    projects.find((p) => p.id === activeProjectId) ?? projects[0];
+    if (activeProjectId && !projects.some((p) => p.id === activeProjectId)) {
+      setActiveProjectId(null);
+      localStorage.removeItem(ACTIVE_PROJECT_KEY);
+    }
+  }, [projects, activeProjectId, routeProjectId, isLoading]);
+
+  const highlightedProjectId = routeProjectId ?? activeProjectId;
+  const activeProject = projects.find((p) => p.id === highlightedProjectId);
 
   const inboxCount = useMemo(() => {
     const projectIds = new Set(projects.map((p) => p.id));
@@ -141,7 +152,7 @@ export default function DashboardLayout() {
     setActiveProjectId(project.id);
     localStorage.setItem(ACTIVE_PROJECT_KEY, project.id);
     setMenuProjectId(null);
-    navigate("/dashboard/projects");
+    navigate(`/dashboard/projects/${project.id}`);
   };
 
   const canManagePortfolio = (portfolio: ApiPortfolio) =>
@@ -169,7 +180,7 @@ export default function DashboardLayout() {
           setCreatingProject(false);
           setActiveProjectId(project.id);
           localStorage.setItem(ACTIVE_PROJECT_KEY, project.id);
-          navigate("/dashboard/projects");
+          navigate(`/dashboard/projects/${project.id}`);
         },
         onError: () => showToast(t("tasks.somethingWrong"), "error"),
       },
@@ -271,7 +282,7 @@ export default function DashboardLayout() {
         onClick={() => selectProject(project)}
         className={cn(
           "flex w-full items-center gap-2 rounded-md py-1.5 pl-3 pr-7 text-left text-sm transition-colors",
-          activeProject?.id === project.id
+          highlightedProjectId === project.id
             ? "bg-indigo-50 font-medium text-indigo-700"
             : "text-sidebar-foreground hover:bg-sidebar-accent",
         )}

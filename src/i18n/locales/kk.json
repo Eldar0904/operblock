@@ -77,6 +77,9 @@
   "projects": {
     "breadcrumb": "Жобалар / {{name}}",
     "defaultName": "Project Nova",
+    "hubTitle": "Барлық жобалар",
+    "hubSubtitle": "Жобалар: {{count}}",
+    "hubLoading": "Жобалар жүктелуде…",
     "searchPlaceholder": "Тапсырмаларды іздеу…",
     "addTask": "Тапсырма қосу",
     "loadingTasks": "Тапсырмалар жүктелуде…",
