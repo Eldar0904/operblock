@@ -72,9 +72,31 @@ export function useCreateProject() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: { name: string }) => {
+    mutationFn: async (data: { name: string; portfolioId?: string | null }) => {
       const token = await getToken();
       return api.createProject(token, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+    },
+  });
+}
+
+export function useUpdateProject() {
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      id,
+      ...data
+    }: {
+      id: string;
+      name?: string;
+      portfolioId?: string | null;
+    }) => {
+      const token = await getToken();
+      return api.updateProject(token, id, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["projects"] });

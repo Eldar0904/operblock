@@ -26,11 +26,24 @@ export const organizations = pgTable("organizations", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
+export const portfolios = pgTable("portfolios", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  orgId: uuid("org_id")
+    .notNull()
+    .references(() => organizations.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  createdByUserId: text("created_by_user_id"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
 export const projects = pgTable("projects", {
   id: uuid("id").primaryKey().defaultRandom(),
   orgId: uuid("org_id")
     .notNull()
     .references(() => organizations.id, { onDelete: "cascade" }),
+  portfolioId: uuid("portfolio_id").references(() => portfolios.id, {
+    onDelete: "set null",
+  }),
   name: text("name").notNull(),
   isPersonal: boolean("is_personal").notNull().default(false),
   createdByUserId: text("created_by_user_id"),
@@ -96,12 +109,25 @@ export const goalProjects = pgTable(
 
 export const organizationsRelations = relations(organizations, ({ many }) => ({
   projects: many(projects),
+  portfolios: many(portfolios),
+}));
+
+export const portfoliosRelations = relations(portfolios, ({ one, many }) => ({
+  organization: one(organizations, {
+    fields: [portfolios.orgId],
+    references: [organizations.id],
+  }),
+  projects: many(projects),
 }));
 
 export const projectsRelations = relations(projects, ({ one, many }) => ({
   organization: one(organizations, {
     fields: [projects.orgId],
     references: [organizations.id],
+  }),
+  portfolio: one(portfolios, {
+    fields: [projects.portfolioId],
+    references: [portfolios.id],
   }),
   tasks: many(tasks),
   goalLinks: many(goalProjects),

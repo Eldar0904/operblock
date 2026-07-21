@@ -1,4 +1,4 @@
-import type { ApiProject, ApiTask, TaskStatus } from "@/lib/mock-data";
+import type { ApiPortfolio, ApiProject, ApiTask, TaskStatus } from "@/lib/mock-data";
 
 export interface ApiMember {
   id: string;
@@ -85,14 +85,35 @@ export const api = {
   getMembers: (token: string | null) =>
     request<ApiMember[]>("/members", {}, token),
 
-  createProject: (token: string | null, data: { name: string; orgId?: string }) =>
-    request<ApiProject>("/projects", { method: "POST", body: JSON.stringify(data) }, token),
+  createProject: (
+    token: string | null,
+    data: { name: string; orgId?: string; portfolioId?: string | null },
+  ) => request<ApiProject>("/projects", { method: "POST", body: JSON.stringify(data) }, token),
 
-  updateProject: (token: string | null, id: string, data: Partial<{ name: string }>) =>
+  updateProject: (
+    token: string | null,
+    id: string,
+    data: Partial<{ name: string; portfolioId: string | null }>,
+  ) =>
     request<ApiProject>(`/projects/${id}`, { method: "PATCH", body: JSON.stringify(data) }, token),
 
   deleteProject: (token: string | null, id: string) =>
     request<void>(`/projects/${id}`, { method: "DELETE" }, token),
+
+  getPortfolios: (token: string | null) => request<ApiPortfolio[]>("/portfolios", {}, token),
+
+  createPortfolio: (token: string | null, data: { name: string }) =>
+    request<ApiPortfolio>("/portfolios", { method: "POST", body: JSON.stringify(data) }, token),
+
+  updatePortfolio: (token: string | null, id: string, data: { name: string }) =>
+    request<ApiPortfolio>(
+      `/portfolios/${id}`,
+      { method: "PATCH", body: JSON.stringify(data) },
+      token,
+    ),
+
+  deletePortfolio: (token: string | null, id: string) =>
+    request<void>(`/portfolios/${id}`, { method: "DELETE" }, token),
 
   getTasks: (token: string | null, projectId?: string) => {
     const query = projectId ? `?projectId=${encodeURIComponent(projectId)}` : "";

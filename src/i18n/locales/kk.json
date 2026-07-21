@@ -91,6 +91,22 @@
     "createProject": "Жоба жасау",
     "needProjectFirst": "Алдымен жоба жасаңыз"
   },
+  "portfolios": {
+    "add": "Қалта қосу",
+    "create": "Қалта жасау",
+    "namePlaceholder": "Қалта атауы",
+    "ungrouped": "Қалтасыз",
+    "ungroupedEmpty": "Қалтадан тыс жоба жоқ",
+    "rename": "Атын өзгерту",
+    "delete": "Қалтаны жою",
+    "deleteConfirm": "«{{name}}» қалтасын жою керек пе? Жобалар қалтасыз қалады.",
+    "deleteForbidden": "Қалтаны тек оны жасаған адам жоя алады.",
+    "renameForbidden": "Қалта атауын тек оны жасаған адам өзгерте алады.",
+    "moveProject": "Жобаны жылжыту",
+    "moveTo": "Мынаған жылжыту",
+    "expand": "Жаю",
+    "collapse": "Жию"
+  },
   "tasks": {
     "addTask": "Тапсырма қосу",
     "editTask": "Тапсырманы өңдеу",

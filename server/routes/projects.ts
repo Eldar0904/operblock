@@ -111,7 +111,11 @@ router.post("/", async (req, res) => {
     return res.status(503).json({ error: "Database not configured" });
   }
 
-  const { name, orgId } = req.body as { name?: string; orgId?: string };
+  const { name, orgId, portfolioId } = req.body as {
+    name?: string;
+    orgId?: string;
+    portfolioId?: string | null;
+  };
   if (!name?.trim()) {
     return res.status(400).json({ error: "name is required" });
   }
@@ -121,6 +125,19 @@ router.post("/", async (req, res) => {
     const resolvedOrgId = await ensureOrgId(db, orgId);
     const createdByUserId = getClerkUserId(req);
 
+    let resolvedPortfolioId: string | null = null;
+    if (portfolioId) {
+      const [portfolio] = await db
+        .select({ id: schema.portfolios.id })
+        .from(schema.portfolios)
+        .where(eq(schema.portfolios.id, portfolioId))
+        .limit(1);
+      if (!portfolio) {
+        return res.status(400).json({ error: "Invalid portfolioId" });
+      }
+      resolvedPortfolioId = portfolio.id;
+    }
+
     const [project] = await db
       .insert(schema.projects)
       .values({
@@ -128,6 +145,7 @@ router.post("/", async (req, res) => {
         orgId: resolvedOrgId,
         isPersonal: false,
         createdByUserId: createdByUserId ?? null,
+        portfolioId: resolvedPortfolioId,
       })
       .returning();
 
@@ -143,16 +161,45 @@ router.patch("/:id", async (req, res) => {
     return res.status(503).json({ error: "Database not configured" });
   }
 
-  const { name } = req.body as { name?: string };
-  if (!name?.trim()) {
+  const { name, portfolioId } = req.body as {
+    name?: string;
+    portfolioId?: string | null;
+  };
+
+  if (name !== undefined && !name.trim()) {
     return res.status(400).json({ error: "name is required" });
+  }
+
+  if (name === undefined && portfolioId === undefined) {
+    return res.status(400).json({ error: "name or portfolioId is required" });
   }
 
   try {
     const db = getDb();
+
+    const updates: { name?: string; portfolioId?: string | null } = {};
+    if (name !== undefined) {
+      updates.name = name.trim();
+    }
+    if (portfolioId !== undefined) {
+      if (portfolioId === null) {
+        updates.portfolioId = null;
+      } else {
+        const [portfolio] = await db
+          .select({ id: schema.portfolios.id })
+          .from(schema.portfolios)
+          .where(eq(schema.portfolios.id, portfolioId))
+          .limit(1);
+        if (!portfolio) {
+          return res.status(400).json({ error: "Invalid portfolioId" });
+        }
+        updates.portfolioId = portfolio.id;
+      }
+    }
+
     const [project] = await db
       .update(schema.projects)
-      .set({ name: name.trim() })
+      .set(updates)
       .where(and(eq(schema.projects.id, req.params.id), eq(schema.projects.isPersonal, false)))
       .returning();
 

@@ -24,6 +24,15 @@ export interface ApiProject {
   name: string;
   isPersonal?: boolean;
   createdByUserId?: string | null;
+  portfolioId?: string | null;
+  createdAt?: string;
+}
+
+export interface ApiPortfolio {
+  id: string;
+  orgId: string;
+  name: string;
+  createdByUserId?: string | null;
   createdAt?: string;
 }
 
