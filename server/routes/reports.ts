@@ -56,6 +56,12 @@ function medianCycleDays(tasks: TaskRow[]): number {
     : Math.round(days[mid] * 10) / 10;
 }
 
+function computeVelocity(completedCount: number, period: ReportPeriod): number {
+  if (period === "week") return Math.round((completedCount / 7) * 10) / 10;
+  if (period === "month") return Math.round((completedCount / 4) * 10) / 10;
+  return completedCount;
+}
+
 router.get("/summary", async (req, res) => {
   if (!isDbConfigured()) {
     return res.status(503).json({ error: "Database not configured" });
@@ -81,6 +87,9 @@ router.get("/summary", async (req, res) => {
 
     const projects: ProjectRow[] = await db.select().from(schema.projects);
     const projectMap = new Map(projects.map((p) => [p.id, p.name]));
+    const dailyProjectIds = new Set(
+      projects.filter((p) => p.isPersonal).map((p) => p.id),
+    );
 
     const completedInPeriod = allTasks.filter((t) => {
       if (!t.completedAt) return false;
@@ -94,6 +103,13 @@ router.get("/summary", async (req, res) => {
 
     const createdInPeriod = allTasks.filter((t) =>
       isInRange(new Date(t.createdAt), range),
+    );
+
+    const completedDaily = completedInPeriod.filter((t) =>
+      dailyProjectIds.has(t.projectId),
+    );
+    const completedLongTerm = completedInPeriod.filter(
+      (t) => !dailyProjectIds.has(t.projectId),
     );
 
     const buckets = buildThroughputBuckets(period, range);
@@ -124,12 +140,9 @@ router.get("/summary", async (req, res) => {
       byProjectMap.set(task.projectId, (byProjectMap.get(task.projectId) ?? 0) + 1);
     }
 
-    const velocity =
-      period === "week"
-        ? Math.round((completedInPeriod.length / 7) * 10) / 10
-        : period === "month"
-          ? Math.round((completedInPeriod.length / 4) * 10) / 10
-          : completedInPeriod.length;
+    const velocity = computeVelocity(completedInPeriod.length, period);
+    const velocityDaily = computeVelocity(completedDaily.length, period);
+    const velocityProjects = computeVelocity(completedLongTerm.length, period);
 
     res.json({
       period: {
@@ -147,6 +160,10 @@ router.get("/summary", async (req, res) => {
       deltaCompleted: completedInPeriod.length - completedInPrevious.length,
       avgCycleTimeDays: medianCycleDays(completedInPeriod),
       velocity,
+      velocityDaily,
+      velocityProjects,
+      completedDaily: completedDaily.length,
+      completedProjects: completedLongTerm.length,
       throughput: buckets.map(({ bucket, count }) => ({ bucket, count })),
       byAssignee: Array.from(byAssigneeMap.entries())
         .map(([userId, count]) => ({ userId, count }))

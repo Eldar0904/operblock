@@ -126,6 +126,10 @@ export interface ReportSummary {
   deltaCompleted: number;
   avgCycleTimeDays: number;
   velocity: number;
+  velocityDaily: number;
+  velocityProjects: number;
+  completedDaily: number;
+  completedProjects: number;
   throughput: { bucket: string; count: number }[];
   byAssignee: { userId: string; count: number }[];
   byPriority: { priority: string; count: number }[];

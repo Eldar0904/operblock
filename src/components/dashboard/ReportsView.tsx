@@ -97,17 +97,34 @@ export function ReportsView({
         />
         <StatCard
           icon={TrendingUp}
-          label={t("reports.velocity")}
-          value={data.velocity}
-          sub={velocitySub}
+          label={t("reports.velocityDaily")}
+          value={data.velocityDaily ?? 0}
+          sub={`${velocitySub} · ${t("reports.completedCount", { count: data.completedDaily ?? 0 })}`}
           color="text-violet-600 bg-violet-50"
         />
+        <StatCard
+          icon={TrendingUp}
+          label={t("reports.velocityProjects")}
+          value={data.velocityProjects ?? 0}
+          sub={`${velocitySub} · ${t("reports.completedCount", { count: data.completedProjects ?? 0 })}`}
+          color="text-sky-600 bg-sky-50"
+        />
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
         <StatCard
           icon={Clock}
           label={t("reports.cycleTime")}
           value={`${data.avgCycleTimeDays}d`}
           sub={formatDeltaPct(data.completed, previousCompleted)}
           color="text-amber-600 bg-amber-50"
+        />
+        <StatCard
+          icon={TrendingUp}
+          label={t("reports.velocityMixed")}
+          value={data.velocity}
+          sub={t("reports.velocityMixedHint")}
+          color="text-slate-600 bg-slate-50"
         />
       </div>
 
