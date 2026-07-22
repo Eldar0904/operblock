@@ -9,7 +9,7 @@ import {
   useUpdateTask,
   useDeleteTask,
 } from "@/hooks/useTasks";
-import { useDailyProject, useMembers } from "@/hooks/useProjects";
+import { useDailyProject, useMembers, useProjects } from "@/hooks/useProjects";
 import type { ApiTask, Priority } from "@/lib/mock-data";
 import { filterTasks } from "@/lib/task-utils";
 import { ListView } from "@/components/dashboard/ListView";
@@ -23,6 +23,7 @@ export default function MyTasksPage() {
   const { showToast } = useToast();
   const { userId } = useAuth();
   const { data: dailyProject, isLoading: dailyLoading } = useDailyProject();
+  const { data: projects = [] } = useProjects();
   const { data: members = [] } = useMembers();
   const { data: tasks = [], isLoading, isError } = useAllTasks();
   const createTask = useCreateTask();
@@ -33,6 +34,17 @@ export default function MyTasksPage() {
   const [priorityFilter, setPriorityFilter] = useState<Priority | "all">("all");
   const [modalOpen, setModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<ApiTask | null>(null);
+
+  const projectNameById = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const project of projects) {
+      map[project.id] = project.name;
+    }
+    if (dailyProject) {
+      map[dailyProject.id] = t("daily.title");
+    }
+    return map;
+  }, [projects, dailyProject, t]);
 
   const myTasks = useMemo(() => {
     const assigned = userId
@@ -136,7 +148,14 @@ export default function MyTasksPage() {
         ) : isError ? (
           <p className="text-sm text-red-600">{t("myTasks.loadError")}</p>
         ) : (
-          <ListView tasks={myTasks} onEdit={openEditModal} onDelete={handleDelete} />
+          <ListView
+            tasks={myTasks}
+            onEdit={openEditModal}
+            onDelete={handleDelete}
+            showProject
+            hideAssignee
+            projectNameById={projectNameById}
+          />
         )}
       </div>
 

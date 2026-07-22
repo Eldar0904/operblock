@@ -1,5 +1,6 @@
 {
   "brand": "OperBlock",
+  "company": "PINE",
   "workspace": "PINE Group",
   "nav": {
     "dashboard": "Басты бет",
@@ -54,7 +55,7 @@
   "landing": {
     "tagline": "Жобаларды басқару — жаңа деңгейде",
     "heroTitle": "Жобаларыңызды нақты басқарыңыз.",
-    "heroSubtitle": "OperBlock командаңызды, тапсырмаларыңызды және мерзімдерді бір тыныш ортада біріктіреді.",
+    "heroSubtitle": "OperBlock — PINE командаларының жұмыс орны: тапсырмалар, жобалар және мерзімдер бір жерде.",
     "getStarted": "Бастау",
     "logIn": "Кіру",
     "boardPreview": "OperBlock — тақта көрінісі",
@@ -67,7 +68,7 @@
     "featureTeamDesc": "Тапсырмаларды тағайындаңыз, пікір қалдырыңыз, барлығын үйлестіріңіз.",
     "featureScaleTitle": "Өсуге дайын",
     "featureScaleDesc": "Жеке жобалардан корпоративтік ортаға дейін — кедергісіз.",
-    "footerTagline": "Өнім шығаратын командалар үшін жасалған."
+    "footerTagline": "PINE командалары үшін жасалған."
   },
   "auth": {
     "signInTitle": "OperBlock-ке кіру",

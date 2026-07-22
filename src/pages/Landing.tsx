@@ -66,10 +66,12 @@ export default function Landing() {
       <main>
         <section className="mx-auto max-w-6xl px-6 pb-20 pt-24">
           <div className="mx-auto max-w-3xl text-center">
-            <p className="mb-4 text-sm font-medium text-indigo-600">{t("landing.tagline")}</p>
-            <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl lg:text-6xl">
-              {t("landing.heroTitle")}
+            <h1 className="text-5xl font-bold tracking-tight text-foreground sm:text-6xl lg:text-7xl">
+              {t("company")}
             </h1>
+            <p className="mt-3 text-xl font-semibold tracking-tight text-foreground/80 sm:text-2xl">
+              {t("brand")}
+            </p>
             <p className="mx-auto mt-6 max-w-xl text-lg text-muted-foreground">
               {t("landing.heroSubtitle")}
             </p>
@@ -152,7 +154,7 @@ export default function Landing() {
 
       <footer className="border-t border-border py-8">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 text-sm text-muted-foreground">
-          <span>© {new Date().getFullYear()} {t("brand")}</span>
+          <span>© {new Date().getFullYear()} {t("company")}</span>
           <span>{t("landing.footerTagline")}</span>
         </div>
       </footer>

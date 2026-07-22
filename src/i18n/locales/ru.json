@@ -1,5 +1,6 @@
 {
   "brand": "OperBlock",
+  "company": "PINE",
   "workspace": "PINE Group",
   "nav": {
     "dashboard": "Дашборд",
@@ -54,7 +55,7 @@
   "landing": {
     "tagline": "Управление проектами по-новому",
     "heroTitle": "Управляйте проектами с полной ясностью.",
-    "heroSubtitle": "OperBlock объединяет команду, задачи и сроки в одном спокойном рабочем пространстве.",
+    "heroSubtitle": "OperBlock — рабочее пространство команд PINE: задачи, проекты и сроки в одном месте.",
     "getStarted": "Начать",
     "logIn": "Войти",
     "boardPreview": "OperBlock — вид доски",
@@ -67,7 +68,7 @@
     "featureTeamDesc": "Назначайте задачи, оставляйте комментарии и держите всех в курсе.",
     "featureScaleTitle": "Готовность к росту",
     "featureScaleDesc": "От личных проектов до корпоративных рабочих пространств — без трения.",
-    "footerTagline": "Создано для команд, которые выпускают продукт."
+    "footerTagline": "Создано для команд PINE."
   },
   "auth": {
     "signInTitle": "Вход в OperBlock",

@@ -19,9 +19,19 @@ interface ListViewProps {
   tasks: ApiTask[];
   onEdit: (task: ApiTask) => void;
   onDelete: (task: ApiTask) => void;
+  showProject?: boolean;
+  hideAssignee?: boolean;
+  projectNameById?: Record<string, string>;
 }
 
-export function ListView({ tasks, onEdit, onDelete }: ListViewProps) {
+export function ListView({
+  tasks,
+  onEdit,
+  onDelete,
+  showProject = false,
+  hideAssignee = false,
+  projectNameById,
+}: ListViewProps) {
   const { t } = useTranslation();
   const { userId } = useAuth();
   const { data: members = [] } = useMembers();
@@ -42,10 +52,15 @@ export function ListView({ tasks, onEdit, onDelete }: ListViewProps) {
           <tr className="border-b border-border bg-muted/50 text-left">
             <th className="px-4 py-3 font-medium text-muted-foreground">{t("reports.tableId")}</th>
             <th className="px-4 py-3 font-medium text-muted-foreground">{t("list.title")}</th>
+            {showProject && (
+              <th className="px-4 py-3 font-medium text-muted-foreground">{t("list.project")}</th>
+            )}
             <th className="px-4 py-3 font-medium text-muted-foreground">{t("list.status")}</th>
             <th className="px-4 py-3 font-medium text-muted-foreground">{t("list.priority")}</th>
             <th className="px-4 py-3 font-medium text-muted-foreground">{t("list.dueDate")}</th>
-            <th className="px-4 py-3 font-medium text-muted-foreground">{t("list.assignee")}</th>
+            {!hideAssignee && (
+              <th className="px-4 py-3 font-medium text-muted-foreground">{t("list.assignee")}</th>
+            )}
             <th className="px-4 py-3 font-medium text-muted-foreground">{t("list.actions")}</th>
           </tr>
         </thead>
@@ -59,6 +74,11 @@ export function ListView({ tasks, onEdit, onDelete }: ListViewProps) {
                 {formatTicketId(task.id)}
               </td>
               <td className="px-4 py-3 font-medium">{task.title}</td>
+              {showProject && (
+                <td className="px-4 py-3 text-muted-foreground">
+                  {projectNameById?.[task.projectId] ?? "—"}
+                </td>
+              )}
               <td className="px-4 py-3 text-muted-foreground">{statusLabel(task.status)}</td>
               <td className="px-4 py-3">
                 {task.priority ? (
@@ -89,14 +109,16 @@ export function ListView({ tasks, onEdit, onDelete }: ListViewProps) {
                   <span className="text-muted-foreground">—</span>
                 )}
               </td>
-              <td className="px-4 py-3">
-                <AssigneeAvatar
-                  userId={task.assigneeUserId}
-                  members={members}
-                  currentUserId={userId}
-                  showLabel
-                />
-              </td>
+              {!hideAssignee && (
+                <td className="px-4 py-3">
+                  <AssigneeAvatar
+                    userId={task.assigneeUserId}
+                    members={members}
+                    currentUserId={userId}
+                    showLabel
+                  />
+                </td>
+              )}
               <td className="px-4 py-3">
                 <div className="flex gap-1">
                   <Button variant="ghost" size="icon" onClick={() => onEdit(task)}>
