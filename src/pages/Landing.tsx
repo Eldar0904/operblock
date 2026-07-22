@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ArrowRight, CheckCircle2, Circle, LayoutGrid } from "lucide-react";
+import { ArrowRight, CheckCircle2, Circle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
@@ -42,11 +42,9 @@ export default function Landing() {
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-sm">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <LayoutGrid className="h-4 w-4" />
-            </div>
-            <span className="text-lg font-semibold tracking-tight">{t("brand")}</span>
+          <Link to="/" className="flex flex-col leading-tight">
+            <span className="text-lg font-semibold tracking-tight">{t("company")}</span>
+            <span className="text-xs font-medium text-muted-foreground">{t("brand")}</span>
           </Link>
           <nav className="flex items-center gap-3">
             <LanguageSwitcher variant="buttons" />
@@ -66,12 +64,9 @@ export default function Landing() {
       <main>
         <section className="mx-auto max-w-6xl px-6 pb-20 pt-24">
           <div className="mx-auto max-w-3xl text-center">
-            <h1 className="text-5xl font-bold tracking-tight text-foreground sm:text-6xl lg:text-7xl">
-              {t("company")}
+            <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl lg:text-6xl">
+              {t("landing.heroTitle")}
             </h1>
-            <p className="mt-3 text-xl font-semibold tracking-tight text-foreground/80 sm:text-2xl">
-              {t("brand")}
-            </p>
             <p className="mx-auto mt-6 max-w-xl text-lg text-muted-foreground">
               {t("landing.heroSubtitle")}
             </p>
@@ -155,7 +150,7 @@ export default function Landing() {
       <footer className="border-t border-border py-8">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 text-sm text-muted-foreground">
           <span>© {new Date().getFullYear()} {t("company")}</span>
-          <span>{t("landing.footerTagline")}</span>
+          <span>Built for high-performance teams.</span>
         </div>
       </footer>
     </div>
