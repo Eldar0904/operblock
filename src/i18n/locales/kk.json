@@ -222,7 +222,8 @@
     "openSection": "Ашық",
     "completedSection": "Дайын",
     "unassigned": "Тағайындалмаған",
-    "addForPerson": "Бағанға тапсырма қосу"
+    "addForPerson": "Тапсырма қосу",
+    "moveTo": "Мынаған жылжыту"
   },
   "comments": {
     "title": "Пікірлер",

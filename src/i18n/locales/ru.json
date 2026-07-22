@@ -222,7 +222,8 @@
     "openSection": "Открытые",
     "completedSection": "Готово",
     "unassigned": "Не назначены",
-    "addForPerson": "Добавить задачу в колонку"
+    "addForPerson": "Добавить задачу",
+    "moveTo": "Переместить к"
   },
   "comments": {
     "title": "Комментарии",

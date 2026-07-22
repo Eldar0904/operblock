@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from "react";
 import { Calendar, Check, Pencil, Plus, Trash2, UserRound } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,13 @@ const priorityStyles: Record<Priority, string> = {
 };
 
 const UNASSIGNED_KEY = "__unassigned__";
+const ACTIVE_TAB_KEY = "operblock-daily-person-tab";
+
+interface PersonTab {
+  key: string;
+  assigneeUserId: string | null;
+  label: string;
+}
 
 interface DailyPersonBoardProps {
   tasks: ApiTask[];
@@ -25,6 +33,19 @@ interface DailyPersonBoardProps {
   onEdit: (task: ApiTask) => void;
   onDelete: (task: ApiTask) => void;
   onAddToColumn: (assigneeUserId: string | null) => void;
+}
+
+function memberSortLabel(
+  member: ApiMember,
+  currentUserId?: string | null,
+): string {
+  if (member.id === currentUserId) return "";
+  return (
+    resolveAssignee(member.id, [member], currentUserId)?.label ??
+    member.fullName ??
+    member.email ??
+    member.id
+  );
 }
 
 export function DailyPersonBoard({
@@ -40,40 +61,99 @@ export function DailyPersonBoard({
   const { t } = useTranslation();
   const priorityLabel = usePriorityLabel();
 
-  const memberIds = new Set(members.map((m) => m.id));
-  const columns: { key: string; assigneeUserId: string | null; label: string }[] = [
-    { key: UNASSIGNED_KEY, assigneeUserId: null, label: t("daily.unassigned") },
-    ...members.map((m) => ({
-      key: m.id,
-      assigneeUserId: m.id,
-      label:
-        m.id === currentUserId
-          ? t("tasks.assigneeMe")
-          : resolveAssignee(m.id, members, currentUserId)?.label ?? m.id,
-    })),
-  ];
+  const tabs: PersonTab[] = useMemo(() => {
+    const memberIds = new Set(members.map((m) => m.id));
+    const me = members.find((m) => m.id === currentUserId);
+    const others = members
+      .filter((m) => m.id !== currentUserId)
+      .slice()
+      .sort((a, b) =>
+        memberSortLabel(a, currentUserId).localeCompare(
+          memberSortLabel(b, currentUserId),
+          undefined,
+          { sensitivity: "base" },
+        ),
+      );
 
-  // Orphan assignees (not in members list) get their own column
-  const orphanIds = [
-    ...new Set(
-      tasks
-        .map((task) => task.assigneeUserId)
-        .filter((id): id is string => typeof id === "string" && id.length > 0)
-        .filter((id) => !memberIds.has(id)),
-    ),
-  ];
-  for (const id of orphanIds) {
-    columns.push({
-      key: id,
-      assigneeUserId: id,
-      label:
-        id === currentUserId
-          ? t("tasks.assigneeMe")
-          : resolveAssignee(id, members, currentUserId)?.label ?? id.slice(0, 8),
-    });
-  }
+    const result: PersonTab[] = [
+      { key: UNASSIGNED_KEY, assigneeUserId: null, label: t("daily.unassigned") },
+    ];
 
-  const tasksForColumn = (assigneeUserId: string | null) => {
+    if (me) {
+      result.push({
+        key: me.id,
+        assigneeUserId: me.id,
+        label: t("tasks.assigneeMe"),
+      });
+    }
+
+    for (const m of others) {
+      result.push({
+        key: m.id,
+        assigneeUserId: m.id,
+        label: resolveAssignee(m.id, members, currentUserId)?.label ?? m.id,
+      });
+    }
+
+    const orphanIds = [
+      ...new Set(
+        tasks
+          .map((task) => task.assigneeUserId)
+          .filter((id): id is string => typeof id === "string" && id.length > 0)
+          .filter((id) => !memberIds.has(id)),
+      ),
+    ].sort();
+
+    for (const id of orphanIds) {
+      result.push({
+        key: id,
+        assigneeUserId: id,
+        label:
+          id === currentUserId
+            ? t("tasks.assigneeMe")
+            : resolveAssignee(id, members, currentUserId)?.label ?? id.slice(0, 8),
+      });
+    }
+
+    return result;
+  }, [members, tasks, currentUserId, t]);
+
+  const defaultTabKey = useMemo(() => {
+    if (currentUserId && tabs.some((tab) => tab.key === currentUserId)) {
+      return currentUserId;
+    }
+    return UNASSIGNED_KEY;
+  }, [currentUserId, tabs]);
+
+  const [activeTabKey, setActiveTabKey] = useState(() => {
+    try {
+      return localStorage.getItem(ACTIVE_TAB_KEY) ?? "";
+    } catch {
+      return "";
+    }
+  });
+
+  useEffect(() => {
+    const keys = new Set(tabs.map((tab) => tab.key));
+    if (activeTabKey && keys.has(activeTabKey)) return;
+    setActiveTabKey(defaultTabKey);
+  }, [tabs, activeTabKey, defaultTabKey]);
+
+  const selectTab = (key: string) => {
+    setActiveTabKey(key);
+    try {
+      localStorage.setItem(ACTIVE_TAB_KEY, key);
+    } catch {
+      // ignore quota / private mode
+    }
+  };
+
+  const activeTab =
+    tabs.find((tab) => tab.key === activeTabKey) ??
+    tabs.find((tab) => tab.key === defaultTabKey) ??
+    tabs[0];
+
+  const tasksForTab = (assigneeUserId: string | null) => {
     const columnTasks = tasks.filter((task) =>
       assigneeUserId === null ? !task.assigneeUserId : task.assigneeUserId === assigneeUserId,
     );
@@ -82,16 +162,16 @@ export function DailyPersonBoard({
     return { open, done, all: columnTasks };
   };
 
+  const openCountForTab = (assigneeUserId: string | null) =>
+    tasksForTab(assigneeUserId).open.length;
+
+  const moveTargets = tabs;
+
   const renderCard = (task: ApiTask, done: boolean) => (
     <li
       key={task.id}
-      draggable
-      onDragStart={(e) => {
-        e.dataTransfer.setData("text/plain", task.id);
-        e.dataTransfer.effectAllowed = "move";
-      }}
       className={cn(
-        "cursor-grab rounded-md border border-border bg-background p-3 shadow-sm active:cursor-grabbing",
+        "rounded-md border border-border bg-background p-3 shadow-sm",
         done && "bg-muted/30 opacity-80",
       )}
     >
@@ -142,6 +222,26 @@ export function DailyPersonBoard({
               </span>
             )}
           </div>
+          <label className="mt-2 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+            <span className="shrink-0">{t("daily.moveTo")}</span>
+            <select
+              value={task.assigneeUserId ?? UNASSIGNED_KEY}
+              onChange={(e) => {
+                const value = e.target.value;
+                const next = value === UNASSIGNED_KEY ? null : value;
+                if ((task.assigneeUserId ?? null) === next) return;
+                onReassign(task, next);
+              }}
+              className="h-7 max-w-[180px] rounded border border-input bg-background px-1.5 text-xs text-foreground outline-none focus:ring-2 focus:ring-ring"
+              aria-label={t("daily.moveTo")}
+            >
+              {moveTargets.map((target) => (
+                <option key={target.key} value={target.key}>
+                  {target.label}
+                </option>
+              ))}
+            </select>
+          </label>
         </div>
         <div className="flex shrink-0 gap-0.5">
           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(task)}>
@@ -168,84 +268,119 @@ export function DailyPersonBoard({
     );
   }
 
+  if (!activeTab) {
+    return (
+      <div className="flex flex-1 items-center justify-center py-16">
+        <p className="text-sm text-muted-foreground">{t("daily.emptyChecklist")}</p>
+      </div>
+    );
+  }
+
+  const { open, done, all } = tasksForTab(activeTab.assigneeUserId);
+
   return (
-    <div className="flex h-full min-h-[400px] gap-4 overflow-x-auto pb-2">
-      {columns.map((column) => {
-        const { open, done, all } = tasksForColumn(column.assigneeUserId);
-        const isCurrentUser = column.assigneeUserId === currentUserId;
-
-        return (
-          <div
-            key={column.key}
-            className={cn(
-              "flex w-72 shrink-0 flex-col rounded-lg border border-border bg-muted/30",
-              isCurrentUser && "ring-1 ring-indigo-200",
-            )}
-            onDragOver={(e) => {
-              e.preventDefault();
-              e.dataTransfer.dropEffect = "move";
-            }}
-            onDrop={(e) => {
-              e.preventDefault();
-              const taskId = e.dataTransfer.getData("text/plain");
-              const task = tasks.find((item) => item.id === taskId);
-              if (!task) return;
-              const nextAssignee = column.assigneeUserId;
-              const current = task.assigneeUserId ?? null;
-              if (current === nextAssignee) return;
-              onReassign(task, nextAssignee);
-            }}
-          >
-            <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2.5">
-              <div className="flex min-w-0 items-center gap-2">
-                {column.assigneeUserId ? (
-                  <AssigneeAvatar
-                    userId={column.assigneeUserId}
-                    members={members}
-                    currentUserId={currentUserId}
-                  />
-                ) : (
-                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-muted-foreground">
-                    <UserRound className="h-3.5 w-3.5" />
-                  </div>
-                )}
-                <div className="min-w-0">
-                  <h2 className="truncate text-sm font-semibold text-foreground">{column.label}</h2>
-                  <p className="text-[11px] text-muted-foreground">
-                    {open.length} {t("daily.openSection").toLowerCase()}
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => onAddToColumn(column.assigneeUserId)}
-                className="rounded p-1 text-muted-foreground hover:bg-background hover:text-foreground"
-                title={t("daily.addForPerson")}
-              >
-                <Plus className="h-4 w-4" />
-              </button>
-            </div>
-
-            <div className="flex flex-1 flex-col gap-2 overflow-y-auto p-2">
-              {all.length === 0 ? (
-                <p className="py-8 text-center text-xs text-muted-foreground">{t("board.noTasks")}</p>
-              ) : (
-                <>
-                  <ul className="space-y-2">{open.map((task) => renderCard(task, false))}</ul>
-                  {done.length > 0 && (
-                    <div className="mt-2 space-y-2 border-t border-border/60 pt-2">
-                      <p className="px-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                        {t("daily.completedSection")}
-                      </p>
-                      <ul className="space-y-2">{done.map((task) => renderCard(task, true))}</ul>
-                    </div>
-                  )}
-                </>
+    <div className="flex h-full min-h-[400px] flex-col">
+      <div className="mb-4 flex gap-1 overflow-x-auto border-b border-border pb-px">
+        {tabs.map((tab) => {
+          const openCount = openCountForTab(tab.assigneeUserId);
+          const isActive = tab.key === activeTab.key;
+          return (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => selectTab(tab.key)}
+              className={cn(
+                "flex shrink-0 items-center gap-2 border-b-2 px-3 py-2 text-sm transition-colors",
+                isActive
+                  ? "border-indigo-600 font-medium text-indigo-700"
+                  : "border-transparent text-muted-foreground hover:text-foreground",
               )}
+            >
+              {tab.assigneeUserId ? (
+                <AssigneeAvatar
+                  userId={tab.assigneeUserId}
+                  members={members}
+                  currentUserId={currentUserId}
+                />
+              ) : (
+                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                  <UserRound className="h-3.5 w-3.5" />
+                </div>
+              )}
+              <span className="max-w-[120px] truncate">{tab.label}</span>
+              <span
+                className={cn(
+                  "rounded-full px-1.5 py-0.5 text-[10px] font-medium",
+                  isActive ? "bg-indigo-100 text-indigo-700" : "bg-muted text-muted-foreground",
+                )}
+              >
+                {openCount}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="flex min-h-0 flex-1 flex-col rounded-lg border border-border bg-muted/20">
+        <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
+          <div className="flex min-w-0 items-center gap-2">
+            {activeTab.assigneeUserId ? (
+              <AssigneeAvatar
+                userId={activeTab.assigneeUserId}
+                members={members}
+                currentUserId={currentUserId}
+              />
+            ) : (
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                <UserRound className="h-3.5 w-3.5" />
+              </div>
+            )}
+            <div className="min-w-0">
+              <h2 className="truncate text-sm font-semibold">{activeTab.label}</h2>
+              <p className="text-[11px] text-muted-foreground">
+                {open.length} {t("daily.openSection").toLowerCase()}
+              </p>
             </div>
           </div>
-        );
-      })}
+          <Button
+            size="sm"
+            className="bg-indigo-600 hover:bg-indigo-700"
+            onClick={() => onAddToColumn(activeTab.assigneeUserId)}
+          >
+            <Plus className="h-3.5 w-3.5" />
+            {t("daily.addForPerson")}
+          </Button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-4">
+          {all.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <p className="text-sm text-muted-foreground">{t("board.noTasks")}</p>
+              <Button
+                size="sm"
+                variant="outline"
+                className="mt-3"
+                onClick={() => onAddToColumn(activeTab.assigneeUserId)}
+              >
+                <Plus className="h-3.5 w-3.5" />
+                {t("daily.addForPerson")}
+              </Button>
+            </div>
+          ) : (
+            <div className="mx-auto w-full max-w-2xl space-y-4">
+              <ul className="space-y-2">{open.map((task) => renderCard(task, false))}</ul>
+              {done.length > 0 && (
+                <div className="space-y-2 border-t border-border/60 pt-4">
+                  <p className="px-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                    {t("daily.completedSection")}
+                  </p>
+                  <ul className="space-y-2">{done.map((task) => renderCard(task, true))}</ul>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
