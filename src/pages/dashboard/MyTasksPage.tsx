@@ -9,7 +9,8 @@ import {
   useUpdateTask,
   useDeleteTask,
 } from "@/hooks/useTasks";
-import { useDailyProject, useMembers, useProjects } from "@/hooks/useProjects";
+import { useDailyProject, useMembersList, useProjects } from "@/hooks/useProjects";
+import { getTaskAssigneeIds } from "@/lib/task-status";
 import type { ApiTask, Priority } from "@/lib/mock-data";
 import { filterTasks } from "@/lib/task-utils";
 import { ListView } from "@/components/dashboard/ListView";
@@ -24,7 +25,7 @@ export default function MyTasksPage() {
   const { userId } = useAuth();
   const { data: dailyProject, isLoading: dailyLoading } = useDailyProject();
   const { data: projects = [] } = useProjects();
-  const { data: members = [] } = useMembers();
+  const members = useMembersList();
   const { data: tasks = [], isLoading, isError } = useAllTasks();
   const createTask = useCreateTask();
   const updateTask = useUpdateTask();
@@ -48,7 +49,7 @@ export default function MyTasksPage() {
 
   const myTasks = useMemo(() => {
     const assigned = userId
-      ? tasks.filter((task) => task.assigneeUserId === userId)
+      ? tasks.filter((task) => getTaskAssigneeIds(task).includes(userId))
       : [];
     return filterTasks(assigned, { search, priority: priorityFilter });
   }, [tasks, userId, search, priorityFilter]);
@@ -67,8 +68,9 @@ export default function MyTasksPage() {
           description: form.description || null,
           status: form.status,
           priority: form.priority || null,
-          dueDate: form.dueDate || null,
-          assigneeUserId: form.assigneeUserId,
+          dueDate: form.dueDate || undefined,
+          assigneeUserId: form.assigneeUserIds[0] ?? null,
+          assigneeUserIds: form.assigneeUserIds,
         },
         { onSuccess: () => setModalOpen(false) },
       );
@@ -81,7 +83,8 @@ export default function MyTasksPage() {
           status: form.status,
           priority: form.priority || undefined,
           dueDate: form.dueDate || undefined,
-          assigneeUserId: form.assigneeUserId ?? userId ?? undefined,
+          assigneeUserId: form.assigneeUserIds[0] ?? userId ?? undefined,
+          assigneeUserIds: form.assigneeUserIds.length ? form.assigneeUserIds : userId ? [userId] : [],
         },
         { onSuccess: () => setModalOpen(false) },
       );

@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import type { ApiTask, Priority } from "@/lib/mock-data";
 import { formatTicketId, isOverdue, statusLabel } from "@/lib/task-utils";
 import { usePriorityLabel } from "@/i18n/use-labels";
-import { useMembers } from "@/hooks/useProjects";
+import { useMembersList } from "@/hooks/useProjects";
 import { AssigneeAvatar } from "@/components/dashboard/AssigneeAvatar";
 
 const priorityStyles: Record<Priority, string> = {
@@ -34,7 +34,7 @@ export function ListView({
 }: ListViewProps) {
   const { t } = useTranslation();
   const { userId } = useAuth();
-  const { data: members = [] } = useMembers();
+  const members = useMembersList();
   const priorityLabel = usePriorityLabel();
 
   if (tasks.length === 0) {

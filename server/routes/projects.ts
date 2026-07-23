@@ -99,9 +99,27 @@ router.get("/", async (_req, res) => {
       .select()
       .from(schema.projects)
       .where(eq(schema.projects.isPersonal, false));
-    res.json(rows);
+    res.json(rows.filter((p) => p.status === "active"));
   } catch (err) {
     console.error("GET /projects error:", err);
+    res.status(503).json({ error: "Database unavailable" });
+  }
+});
+
+router.get("/all", async (_req, res) => {
+  if (!isDbConfigured()) {
+    return res.status(503).json({ error: "Database not configured" });
+  }
+
+  try {
+    const db = getDb();
+    const rows = await db
+      .select()
+      .from(schema.projects)
+      .where(eq(schema.projects.isPersonal, false));
+    res.json(rows);
+  } catch (err) {
+    console.error("GET /projects/all error:", err);
     res.status(503).json({ error: "Database unavailable" });
   }
 });
@@ -161,23 +179,47 @@ router.patch("/:id", async (req, res) => {
     return res.status(503).json({ error: "Database not configured" });
   }
 
-  const { name, portfolioId } = req.body as {
+  const { name, portfolioId, status } = req.body as {
     name?: string;
     portfolioId?: string | null;
+    status?: "active" | "paused" | "canceled";
   };
 
   if (name !== undefined && !name.trim()) {
     return res.status(400).json({ error: "name is required" });
   }
 
-  if (name === undefined && portfolioId === undefined) {
-    return res.status(400).json({ error: "name or portfolioId is required" });
+  if (name === undefined && portfolioId === undefined && status === undefined) {
+    return res.status(400).json({ error: "name, portfolioId, or status is required" });
   }
 
   try {
     const db = getDb();
 
-    const updates: { name?: string; portfolioId?: string | null } = {};
+    const [existing] = await db
+      .select()
+      .from(schema.projects)
+      .where(and(eq(schema.projects.id, req.params.id), eq(schema.projects.isPersonal, false)))
+      .limit(1);
+
+    if (!existing) {
+      return res.status(404).json({ error: "Project not found" });
+    }
+
+    const userId = getClerkUserId(req);
+    if (
+      existing.createdByUserId &&
+      (!userId || existing.createdByUserId !== userId)
+    ) {
+      return res.status(403).json({ error: "Only the project creator can edit this project" });
+    }
+
+    const updates: {
+      name?: string;
+      portfolioId?: string | null;
+      status?: "active" | "paused" | "canceled";
+      statusChangedAt?: Date | null;
+    } = {};
     if (name !== undefined) {
       updates.name = name.trim();
     }
@@ -196,11 +238,16 @@ router.patch("/:id", async (req, res) => {
         updates.portfolioId = portfolio.id;
       }
     }
+    if (status !== undefined) {
+      updates.status = status;
+      updates.statusChangedAt =
+        status === "active" ? null : new Date();
+    }
 
     const [project] = await db
       .update(schema.projects)
       .set(updates)
-      .where(and(eq(schema.projects.id, req.params.id), eq(schema.projects.isPersonal, false)))
+      .where(eq(schema.projects.id, req.params.id))
       .returning();
 
     if (!project) {

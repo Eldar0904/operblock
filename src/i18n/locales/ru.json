@@ -35,7 +35,9 @@
     "todo": "К выполнению",
     "in_progress": "В работе",
     "in_review": "На проверке",
-    "done": "Готово"
+    "done": "Готово",
+    "paused": "На паузе",
+    "canceled": "Отменено"
   },
   "priority": {
     "all": "Все приоритеты",
@@ -88,6 +90,10 @@
     "deleteProject": "Удалить проект",
     "deleteProjectConfirm": "Удалить проект «{{name}}» и все его задачи? Это нельзя отменить.",
     "deleteForbidden": "Удалить проект может только его создатель.",
+    "editForbidden": "Редактировать проект может только его создатель.",
+    "pauseProject": "Приостановить",
+    "cancelProject": "Отменить",
+    "reopenProject": "Возобновить",
     "noProjectTitle": "Нет проекта",
     "noProjectDesc": "Создайте проект, чтобы добавлять задачи на доску.",
     "newProjectPlaceholder": "Название проекта",
@@ -120,9 +126,10 @@
     "status": "Статус",
     "priority": "Приоритет",
     "dueDate": "Срок",
-    "dueDatePlaceholder": "напр. 25 июл или 2026-07-25",
+    "dueDatePlaceholder": "Выберите дату и время",
     "assignToMe": "Назначить на меня",
     "assignee": "Исполнитель",
+    "participants": "Участники",
     "assigneeMe": "Я",
     "unassigned": "Не назначен",
     "saving": "Сохранение…",
@@ -222,7 +229,16 @@
     "markOpen": "Вернуть в открытые",
     "openSection": "Открытые",
     "completedSection": "Готово",
-    "unassigned": "Не назначены",
+    "general": "Общие",
+    "inboxSection": "Входящие",
+    "collaborationsSection": "Совместные",
+    "pausedTab": "На паузе",
+    "canceledTab": "Отменено",
+    "closedTasks": "закрытых задач",
+    "participantsHint": "Никто — входящие. Один человек — личная задача. Два и более — совместная.",
+    "pauseTask": "Приостановить",
+    "cancelTask": "Отменить",
+    "reopenTask": "Возобновить",
     "addForPerson": "Добавить задачу",
     "moveTo": "Переместить к"
   },
@@ -320,7 +336,10 @@
   "members": {
     "title": "Участники",
     "you": "Вы",
-    "inviteSoon": "Пригласить команду (скоро)"
+    "inviteSoon": "Пригласить команду (скоро)",
+    "teamFull": "Команда заполнена (макс. 6).",
+    "teamFullTitle": "Регистрация закрыта",
+    "teamFullSignup": "Команда уже полная. Войдите, если у вас есть аккаунт, или попросите администратора пригласить вас."
   },
   "notifications": {
     "title": "Уведомления",

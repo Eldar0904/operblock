@@ -89,7 +89,8 @@ export function useCreateTask() {
       status?: TaskStatus;
       priority?: Priority;
       dueDate?: string;
-      assigneeUserId?: string;
+      assigneeUserId?: string | null;
+      assigneeUserIds?: string[];
     }) => {
       const token = await getToken();
       return api.createTask(token, data);
@@ -119,6 +120,7 @@ export function useUpdateTask() {
       priority?: Priority | null;
       dueDate?: string | null;
       assigneeUserId?: string | null;
+      assigneeUserIds?: string[];
     }) => {
       const token = await getToken();
       return api.updateTask(token, id, data);

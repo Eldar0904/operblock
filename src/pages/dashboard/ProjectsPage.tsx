@@ -20,10 +20,11 @@ import {
 import {
   useDailyProject,
   useDeleteProject,
-  useMembers,
+  useMembersList,
   useProjects,
+  useUpdateProject,
 } from "@/hooks/useProjects";
-import type { ApiTask, Priority, TaskStatus } from "@/lib/mock-data";
+import type { ApiTask, Priority, ProjectStatus, TaskStatus } from "@/lib/mock-data";
 import { filterTasks } from "@/lib/task-utils";
 import { ApiError } from "@/lib/api";
 import { BoardView } from "@/components/dashboard/BoardView";
@@ -58,7 +59,8 @@ export default function ProjectsPage() {
   const routeProject = projects.find((p) => p.id === projectId);
   const activeProject = isDailyRoute ? dailyProject : routeProject;
   const { userId } = useAuth();
-  const { data: members = [] } = useMembers();
+  const members = useMembersList();
+  const updateProject = useUpdateProject();
   const [searchParams, setSearchParams] = useSearchParams();
   const activeView = paramToView(searchParams.get("view"));
 
@@ -79,6 +81,7 @@ export default function ProjectsPage() {
   const [defaultAssigneeUserId, setDefaultAssigneeUserId] = useState<string | null | undefined>(
     undefined,
   );
+  const [modalReadOnly, setModalReadOnly] = useState(false);
 
   useEffect(() => {
     if (isDailyRoute || projectsLoading) return;
@@ -104,16 +107,20 @@ export default function ProjectsPage() {
     setEditingTask(null);
     setDefaultStatus(status);
     setDefaultAssigneeUserId(assigneeUserId);
+    setModalReadOnly(false);
     setModalOpen(true);
   };
 
-  const openEditModal = (task: ApiTask) => {
+  const openEditModal = (task: ApiTask, readOnly = false) => {
     setEditingTask(task);
     setDefaultAssigneeUserId(undefined);
+    setModalReadOnly(readOnly);
     setModalOpen(true);
   };
 
   const handleModalSubmit = (form: TaskFormData) => {
+    const assigneeUserIds = form.assigneeUserIds;
+    const assigneeUserId = assigneeUserIds[0] ?? null;
     if (editingTask) {
       updateTask.mutate(
         {
@@ -122,8 +129,9 @@ export default function ProjectsPage() {
           description: form.description || null,
           status: form.status,
           priority: form.priority || null,
-          dueDate: form.dueDate || null,
-          assigneeUserId: form.assigneeUserId,
+          dueDate: form.dueDate || undefined,
+          assigneeUserId,
+          assigneeUserIds,
         },
         { onSuccess: () => setModalOpen(false) },
       );
@@ -136,7 +144,8 @@ export default function ProjectsPage() {
           status: form.status || defaultStatus,
           priority: form.priority || undefined,
           dueDate: form.dueDate || undefined,
-          assigneeUserId: form.assigneeUserId ?? undefined,
+          assigneeUserId: assigneeUserId ?? undefined,
+          assigneeUserIds,
         },
         { onSuccess: () => setModalOpen(false) },
       );
@@ -192,13 +201,16 @@ export default function ProjectsPage() {
     updateStatus.mutate({ id: task.id, status: nextStatus });
   };
 
-  const handleReassign = (task: ApiTask, assigneeUserId: string | null) => {
-    if ((task.assigneeUserId ?? null) === assigneeUserId) return;
-    updateTask.mutate({ id: task.id, assigneeUserId });
-  };
-
   const handleAddToPersonColumn = (assigneeUserId: string | null) => {
     openAddModal("todo", assigneeUserId);
+  };
+
+  const isProjectCreator =
+    activeProject?.createdByUserId == null || activeProject.createdByUserId === userId;
+
+  const setProjectStatus = (status: ProjectStatus) => {
+    if (!activeProject || isDailyRoute || !isProjectCreator) return;
+    updateProject.mutate({ id: activeProject.id, status });
   };
 
   const isSubmitting = createTask.isPending || updateTask.isPending;
@@ -283,10 +295,41 @@ export default function ProjectsPage() {
         <div className="flex items-center gap-2 py-2">
           <PriorityFilter value={priorityFilter} onChange={setPriorityFilter} />
           <MembersDropdown />
-          {!isDailyRoute &&
-            activeProject &&
-            (activeProject.createdByUserId == null ||
-              activeProject.createdByUserId === userId) && (
+          {!isDailyRoute && activeProject && isProjectCreator && (
+            <>
+              {activeProject.status === "active" && (
+                <>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setProjectStatus("paused")}
+                    disabled={updateProject.isPending}
+                  >
+                    {t("projects.pauseProject")}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setProjectStatus("canceled")}
+                    disabled={updateProject.isPending}
+                  >
+                    {t("projects.cancelProject")}
+                  </Button>
+                </>
+              )}
+              {(activeProject.status === "paused" || activeProject.status === "canceled") && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setProjectStatus("active")}
+                  disabled={updateProject.isPending}
+                >
+                  {t("projects.reopenProject")}
+                </Button>
+              )}
+            </>
+          )}
+          {!isDailyRoute && activeProject && isProjectCreator && (
             <Button
               size="sm"
               variant="outline"
@@ -325,7 +368,6 @@ export default function ProjectsPage() {
             members={members}
             currentUserId={userId}
             onToggleDone={handleToggleDone}
-            onReassign={handleReassign}
             onEdit={openEditModal}
             onDelete={handleDelete}
             onAddToColumn={handleAddToPersonColumn}
@@ -366,6 +408,8 @@ export default function ProjectsPage() {
         defaultAssigneeToMe={isDailyRoute && defaultAssigneeUserId === undefined}
         defaultAssigneeUserId={isDailyRoute ? defaultAssigneeUserId : undefined}
         hideStatus={isDailyRoute}
+        dailyMode={isDailyRoute}
+        readOnly={modalReadOnly}
       />
     </>
   );

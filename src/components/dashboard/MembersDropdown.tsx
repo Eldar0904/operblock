@@ -10,7 +10,10 @@ import type { ApiMember } from "@/lib/api";
 export function MembersDropdown() {
   const { t } = useTranslation();
   const { user } = useUser();
-  const { data: members = [] } = useMembers();
+  const { data } = useMembers();
+  const members = data?.members ?? [];
+  const teamFull = data?.teamFull ?? false;
+  const maxUsers = data?.maxUsers ?? 6;
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -47,7 +50,12 @@ export function MembersDropdown() {
       </Button>
       {open && (
         <div className="absolute right-0 top-full z-20 mt-1 w-72 rounded-lg border border-border bg-background py-2 shadow-lg">
-          <p className="px-4 py-2 text-xs font-medium text-muted-foreground">{t("members.title")}</p>
+          <p className="px-4 py-2 text-xs font-medium text-muted-foreground">
+            {t("members.title")} ({list.length}/{maxUsers})
+          </p>
+          {teamFull && (
+            <p className="px-4 pb-2 text-xs text-amber-700">{t("members.teamFull")}</p>
+          )}
           <div className="max-h-64 overflow-y-auto">
             {list.map((member) => (
               <div key={member.id} className="flex items-center gap-3 px-4 py-2">
@@ -61,9 +69,6 @@ export function MembersDropdown() {
                   <p className="truncate text-sm font-medium">
                     {member.fullName ?? member.email ?? member.id}
                   </p>
-                  {member.id === user?.id && (
-                    <p className="truncate text-xs text-muted-foreground">{t("members.you")}</p>
-                  )}
                 </div>
               </div>
             ))}

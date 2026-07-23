@@ -15,7 +15,11 @@ export const taskStatusEnum = pgEnum("task_status", [
   "in_progress",
   "in_review",
   "done",
+  "paused",
+  "canceled",
 ]);
+
+export const projectStatusEnum = pgEnum("project_status", ["active", "paused", "canceled"]);
 
 export const taskPriorityEnum = pgEnum("task_priority", ["low", "medium", "high"]);
 
@@ -46,6 +50,8 @@ export const projects = pgTable("projects", {
   }),
   name: text("name").notNull(),
   isPersonal: boolean("is_personal").notNull().default(false),
+  status: projectStatusEnum("status").notNull().default("active"),
+  statusChangedAt: timestamp("status_changed_at", { withTimezone: true }),
   createdByUserId: text("created_by_user_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
@@ -59,7 +65,7 @@ export const tasks = pgTable("tasks", {
   description: text("description"),
   status: taskStatusEnum("status").notNull().default("todo"),
   priority: taskPriorityEnum("priority"),
-  dueDate: text("due_date"),
+  dueDate: timestamp("due_date", { withTimezone: true }),
   assigneeUserId: text("assignee_user_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   completedAt: timestamp("completed_at", { withTimezone: true }),

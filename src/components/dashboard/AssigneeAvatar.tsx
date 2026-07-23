@@ -5,7 +5,7 @@ import { avatarColorForUserId, initialsFromUser } from "@/lib/task-utils";
 export function resolveAssignee(
   userId: string | null | undefined,
   members: ApiMember[],
-  currentUserId?: string | null,
+  _currentUserId?: string | null,
 ): { initials: string; color: string; label: string } | null {
   if (!userId) return null;
 
@@ -17,14 +17,14 @@ export function resolveAssignee(
       label:
         member.fullName ||
         member.email ||
-        (userId === currentUserId ? "You" : userId.slice(0, 8)),
+        userId.slice(0, 8),
     };
   }
 
   return {
     initials: userId.slice(-2).toUpperCase(),
     color: avatarColorForUserId(userId),
-    label: userId === currentUserId ? "You" : `${userId.slice(0, 8)}…`,
+    label: userId.slice(0, 8),
   };
 }
 

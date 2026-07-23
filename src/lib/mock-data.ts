@@ -1,5 +1,13 @@
-export type TaskStatus = "backlog" | "todo" | "in_progress" | "in_review" | "done";
+export type TaskStatus =
+  | "backlog"
+  | "todo"
+  | "in_progress"
+  | "in_review"
+  | "done"
+  | "paused"
+  | "canceled";
 export type Priority = "low" | "medium" | "high";
+export type ProjectStatus = "active" | "paused" | "canceled";
 
 export interface ApiTask {
   id: string;
@@ -10,6 +18,7 @@ export interface ApiTask {
   priority?: Priority | null;
   dueDate?: string | null;
   assigneeUserId?: string | null;
+  assigneeUserIds?: string[];
   createdAt?: string;
   completedAt?: string | null;
   tag?: string;
@@ -23,6 +32,8 @@ export interface ApiProject {
   orgId: string;
   name: string;
   isPersonal?: boolean;
+  status?: ProjectStatus;
+  statusChangedAt?: string | null;
   createdByUserId?: string | null;
   portfolioId?: string | null;
   createdAt?: string;

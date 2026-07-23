@@ -1,11 +1,32 @@
 import { Router } from "express";
 import { eq } from "drizzle-orm";
 import { getDb, isDbConfigured, schema } from "../db/index.js";
-import { requireClerkAuth } from "../middleware/auth.js";
+import { getClerkUserId, requireClerkAuth } from "../middleware/auth.js";
+import {
+  applyCompletedAtUpdate,
+  canMutateDailyTask,
+  getAssigneeIdsForTask,
+  getTaskProjectContext,
+  initialCompletedAtForStatus,
+  loadAssigneesByTaskIds,
+  parseDueDateInput,
+  serializeTask,
+  syncTaskAssignees,
+} from "../lib/task-service.js";
 
 const router = Router();
 
 router.use(requireClerkAuth);
+
+async function enrichTasks(db: ReturnType<typeof getDb>, rows: (typeof schema.tasks.$inferSelect)[]) {
+  const assigneeMap = await loadAssigneesByTaskIds(
+    db,
+    rows.map((r) => r.id),
+  );
+  return rows.map((row) =>
+    serializeTask(row, assigneeMap.get(row.id) ?? (row.assigneeUserId ? [row.assigneeUserId] : [])),
+  );
+}
 
 router.get("/", async (req, res) => {
   if (!isDbConfigured()) {
@@ -20,7 +41,7 @@ router.get("/", async (req, res) => {
       ? await db.select().from(schema.tasks).where(eq(schema.tasks.projectId, projectId))
       : await db.select().from(schema.tasks);
 
-    res.json(rows);
+    res.json(await enrichTasks(db, rows));
   } catch (err) {
     console.error("GET /tasks error:", err);
     res.status(503).json({ error: "Database unavailable" });
@@ -32,37 +53,73 @@ router.post("/", async (req, res) => {
     return res.status(503).json({ error: "Database not configured" });
   }
 
-  const { projectId, title, description, status, priority, dueDate, assigneeUserId } = req.body as {
+  const {
+    projectId,
+    title,
+    description,
+    status,
+    priority,
+    dueDate,
+    assigneeUserId,
+    assigneeUserIds,
+  } = req.body as {
     projectId?: string;
     title?: string;
     description?: string;
     status?: string;
     priority?: string;
-    dueDate?: string;
-    assigneeUserId?: string;
+    dueDate?: string | null;
+    assigneeUserId?: string | null;
+    assigneeUserIds?: string[];
   };
 
   if (!projectId || !title?.trim()) {
     return res.status(400).json({ error: "projectId and title are required" });
   }
 
+  const userId = getClerkUserId(req);
+  const participantIds =
+    assigneeUserIds !== undefined
+      ? assigneeUserIds
+      : assigneeUserId
+        ? [assigneeUserId]
+        : [];
+
   try {
     const db = getDb();
+    const [project] = await db
+      .select()
+      .from(schema.projects)
+      .where(eq(schema.projects.id, projectId))
+      .limit(1);
+
+    if (!project) {
+      return res.status(404).json({ error: "Project not found" });
+    }
+
+    if (project.isPersonal && !canMutateDailyTask(userId, participantIds)) {
+      return res.status(403).json({ error: "Cannot create task for another person's Daily tab" });
+    }
+
+    const nextStatus = status ?? "todo";
+    const parsedDue = parseDueDateInput(dueDate);
+
     const [task] = await db
       .insert(schema.tasks)
       .values({
         projectId,
         title: title.trim(),
         description: description ?? null,
-        status: status ?? "todo",
-        priority: priority ?? null,
-        dueDate: dueDate ?? null,
-        assigneeUserId: assigneeUserId ?? null,
-        completedAt: status === "done" ? new Date() : null,
+        status: nextStatus as typeof schema.tasks.$inferInsert.status,
+        priority: (priority ?? null) as typeof schema.tasks.$inferInsert.priority,
+        dueDate: parsedDue,
+        assigneeUserId: participantIds[0] ?? null,
+        completedAt: initialCompletedAtForStatus(nextStatus),
       })
       .returning();
 
-    res.status(201).json(task);
+    const ids = await syncTaskAssignees(db, task.id, participantIds);
+    res.status(201).json(serializeTask(task, ids));
   } catch (err) {
     console.error("POST /tasks error:", err);
     res.status(503).json({ error: "Database unavailable" });
@@ -74,13 +131,22 @@ router.patch("/:id", async (req, res) => {
     return res.status(503).json({ error: "Database not configured" });
   }
 
-  const { title, description, status, priority, dueDate, assigneeUserId } = req.body as {
+  const {
+    title,
+    description,
+    status,
+    priority,
+    dueDate,
+    assigneeUserId,
+    assigneeUserIds,
+  } = req.body as {
     title?: string;
     description?: string;
     status?: string;
     priority?: string;
-    dueDate?: string;
+    dueDate?: string | null;
     assigneeUserId?: string | null;
+    assigneeUserIds?: string[];
   };
 
   const updates: Record<string, unknown> = {};
@@ -88,43 +154,69 @@ router.patch("/:id", async (req, res) => {
   if (description !== undefined) updates.description = description;
   if (status !== undefined) updates.status = status;
   if (priority !== undefined) updates.priority = priority;
-  if (dueDate !== undefined) updates.dueDate = dueDate;
-  if (assigneeUserId !== undefined) updates.assigneeUserId = assigneeUserId;
+  if (dueDate !== undefined) updates.dueDate = parseDueDateInput(dueDate);
 
-  if (Object.keys(updates).length === 0) {
+  const hasAssigneePatch = assigneeUserIds !== undefined || assigneeUserId !== undefined;
+
+  if (
+    Object.keys(updates).length === 0 &&
+    !hasAssigneePatch
+  ) {
     return res.status(400).json({ error: "No fields to update" });
   }
 
+  const userId = getClerkUserId(req);
+
   try {
     const db = getDb();
-
-    if (status !== undefined) {
-      const [existing] = await db
-        .select({ status: schema.tasks.status })
-        .from(schema.tasks)
-        .where(eq(schema.tasks.id, req.params.id))
-        .limit(1);
-      if (!existing) {
-        return res.status(404).json({ error: "Task not found" });
-      }
-      if (status === "done" && existing.status !== "done") {
-        updates.completedAt = new Date();
-      } else if (status !== "done" && existing.status === "done") {
-        updates.completedAt = null;
-      }
-    }
-
-    const [task] = await db
-      .update(schema.tasks)
-      .set(updates)
-      .where(eq(schema.tasks.id, req.params.id))
-      .returning();
-
-    if (!task) {
+    const ctx = await getTaskProjectContext(db, req.params.id);
+    if (!ctx) {
       return res.status(404).json({ error: "Task not found" });
     }
 
-    res.json(task);
+    const currentAssignees = await getAssigneeIdsForTask(db, req.params.id);
+    if (ctx.project.isPersonal && !canMutateDailyTask(userId, currentAssignees)) {
+      return res.status(403).json({ error: "You can only edit tasks on your own Daily tab" });
+    }
+
+    if (status !== undefined) {
+      applyCompletedAtUpdate(updates, status, ctx.task.status);
+    }
+
+    let task = ctx.task;
+    if (Object.keys(updates).length > 0) {
+      const [updated] = await db
+        .update(schema.tasks)
+        .set(updates)
+        .where(eq(schema.tasks.id, req.params.id))
+        .returning();
+      if (!updated) {
+        return res.status(404).json({ error: "Task not found" });
+      }
+      task = updated;
+    }
+
+    let ids = currentAssignees;
+    if (hasAssigneePatch) {
+      const nextIds =
+        assigneeUserIds !== undefined
+          ? assigneeUserIds
+          : assigneeUserId
+            ? [assigneeUserId]
+            : [];
+      if (ctx.project.isPersonal && !canMutateDailyTask(userId, nextIds)) {
+        return res.status(403).json({ error: "Cannot assign task outside your Daily permissions" });
+      }
+      ids = await syncTaskAssignees(db, req.params.id, nextIds);
+      const [refreshed] = await db
+        .select()
+        .from(schema.tasks)
+        .where(eq(schema.tasks.id, req.params.id))
+        .limit(1);
+      if (refreshed) task = refreshed;
+    }
+
+    res.json(serializeTask(task, ids));
   } catch (err) {
     console.error("PATCH /tasks error:", err);
     res.status(503).json({ error: "Database unavailable" });
@@ -136,8 +228,20 @@ router.delete("/:id", async (req, res) => {
     return res.status(503).json({ error: "Database not configured" });
   }
 
+  const userId = getClerkUserId(req);
+
   try {
     const db = getDb();
+    const ctx = await getTaskProjectContext(db, req.params.id);
+    if (!ctx) {
+      return res.status(404).json({ error: "Task not found" });
+    }
+
+    const assignees = await getAssigneeIdsForTask(db, req.params.id);
+    if (ctx.project.isPersonal && !canMutateDailyTask(userId, assignees)) {
+      return res.status(403).json({ error: "You can only delete tasks on your own Daily tab" });
+    }
+
     const [task] = await db
       .delete(schema.tasks)
       .where(eq(schema.tasks.id, req.params.id))

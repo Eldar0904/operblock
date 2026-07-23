@@ -1,6 +1,6 @@
 import { useAuth } from "@clerk/clerk-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api, ApiError, type ApiMember } from "@/lib/api";
+import { api, ApiError, type ApiMember, type MembersResponse } from "@/lib/api";
 import { MOCK_DAILY_PROJECT, MOCK_PROJECT, type ApiProject } from "@/lib/mock-data";
 
 export function useProjects() {
@@ -54,17 +54,22 @@ export function useMembers() {
 
   return useQuery({
     queryKey: ["members"],
-    queryFn: async (): Promise<ApiMember[]> => {
+    queryFn: async (): Promise<MembersResponse> => {
       try {
         const token = await getToken();
         return await api.getMembers(token);
       } catch {
-        return [];
+        return { members: [], maxUsers: 6, teamFull: false };
       }
     },
     retry: false,
     staleTime: 60_000,
   });
+}
+
+export function useMembersList(): ApiMember[] {
+  const { data } = useMembers();
+  return data?.members ?? [];
 }
 
 export function useCreateProject() {
@@ -94,6 +99,7 @@ export function useUpdateProject() {
       id: string;
       name?: string;
       portfolioId?: string | null;
+      status?: ApiProject["status"];
     }) => {
       const token = await getToken();
       return api.updateProject(token, id, data);

@@ -35,7 +35,9 @@
     "todo": "Орындауға",
     "in_progress": "Орындалуда",
     "in_review": "Тексеруде",
-    "done": "Дайын"
+    "done": "Дайын",
+    "paused": "Кідіртуде",
+    "canceled": "Болдырылмаған"
   },
   "priority": {
     "all": "Барлық басымдық",
@@ -88,6 +90,10 @@
     "deleteProject": "Жобаны жою",
     "deleteProjectConfirm": "«{{name}}» жобасын және барлық тапсырмаларды жою керек пе? Бұл әрекетті қайтару мүмкін емес.",
     "deleteForbidden": "Жобаны тек оны жасаған адам жоя алады.",
+    "editForbidden": "Жобаны тек оны жасаған адам өңдей алады.",
+    "pauseProject": "Кідірту",
+    "cancelProject": "Болдырмау",
+    "reopenProject": "Қайта бастау",
     "noProjectTitle": "Жоба жоқ",
     "noProjectDesc": "Тапсырма қосу үшін алдымен жоба жасаңыз.",
     "newProjectPlaceholder": "Жоба атауы",
@@ -120,9 +126,10 @@
     "status": "Күйі",
     "priority": "Басымдық",
     "dueDate": "Мерзім",
-    "dueDatePlaceholder": "мыс. 25 шіл или 2026-07-25",
+    "dueDatePlaceholder": "Күн мен уақытты таңдаңыз",
     "assignToMe": "Маған тағайындау",
     "assignee": "Орындаушы",
+    "participants": "Қатысушылар",
     "assigneeMe": "Мен",
     "unassigned": "Тағайындалмаған",
     "saving": "Сақталуда…",
@@ -222,7 +229,16 @@
     "markOpen": "Ашыққа қайтару",
     "openSection": "Ашық",
     "completedSection": "Дайын",
-    "unassigned": "Тағайындалмаған",
+    "general": "Жалпы",
+    "inboxSection": "Кіріс",
+    "collaborationsSection": "Бірлескен",
+    "pausedTab": "Кідіртуде",
+    "canceledTab": "Болдырылмаған",
+    "closedTasks": "жабық тапсырма",
+    "participantsHint": "Ешкім — кіріс. Бір адам — жеке. Екі және одан көп — бірлескен.",
+    "pauseTask": "Кідірту",
+    "cancelTask": "Болдырмау",
+    "reopenTask": "Қайта ашу",
     "addForPerson": "Тапсырма қосу",
     "moveTo": "Мынаған жылжыту"
   },
@@ -320,7 +336,10 @@
   "members": {
     "title": "Қатысушылар",
     "you": "Сіз",
-    "inviteSoon": "Команданы шақыру (жақында)"
+    "inviteSoon": "Команданы шақыру (жақында)",
+    "teamFull": "Команда толы (макс. 6).",
+    "teamFullTitle": "Тіркелу жабық",
+    "teamFullSignup": "Команда толы. Егер аккаунтыңыз бар болса, кіріңіз немесе әкімшіден шақыру сұраңыз."
   },
   "notifications": {
     "title": "Хабарландырулар",

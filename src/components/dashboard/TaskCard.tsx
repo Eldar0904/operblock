@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import type { ApiTask, Priority } from "@/lib/mock-data";
 import { formatTicketId, isOverdue } from "@/lib/task-utils";
 import { usePriorityLabel } from "@/i18n/use-labels";
-import { useMembers } from "@/hooks/useProjects";
+import { useMembersList } from "@/hooks/useProjects";
 import { AssigneeAvatar } from "@/components/dashboard/AssigneeAvatar";
 
 const priorityStyles: Record<Priority, string> = {
@@ -25,7 +25,7 @@ interface TaskCardProps {
 export function TaskCard({ task, onDragStart, onEdit, onDelete }: TaskCardProps) {
   const { t } = useTranslation();
   const { userId } = useAuth();
-  const { data: members = [] } = useMembers();
+  const members = useMembersList();
   const priorityLabel = usePriorityLabel();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);

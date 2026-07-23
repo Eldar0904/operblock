@@ -1,4 +1,4 @@
-import type { ApiPortfolio, ApiProject, ApiTask, TaskStatus } from "@/lib/mock-data";
+import type { ApiPortfolio, ApiProject, ApiTask, ProjectStatus, TaskStatus } from "@/lib/mock-data";
 
 export interface ApiMember {
   id: string;
@@ -7,6 +7,12 @@ export interface ApiMember {
   fullName: string | null;
   email: string | null;
   imageUrl: string | null;
+}
+
+export interface MembersResponse {
+  members: ApiMember[];
+  maxUsers: number;
+  teamFull: boolean;
 }
 
 export interface ApiComment {
@@ -83,7 +89,10 @@ export const api = {
     request<ApiProject>("/projects/daily", {}, token),
 
   getMembers: (token: string | null) =>
-    request<ApiMember[]>("/members", {}, token),
+    request<MembersResponse>("/members", {}, token),
+
+  getAllProjects: (token: string | null) =>
+    request<ApiProject[]>("/projects/all", {}, token),
 
   createProject: (
     token: string | null,
@@ -93,7 +102,7 @@ export const api = {
   updateProject: (
     token: string | null,
     id: string,
-    data: Partial<{ name: string; portfolioId: string | null }>,
+    data: Partial<{ name: string; portfolioId: string | null; status: ProjectStatus }>,
   ) =>
     request<ApiProject>(`/projects/${id}`, { method: "PATCH", body: JSON.stringify(data) }, token),
 
@@ -128,8 +137,9 @@ export const api = {
       description?: string;
       status?: TaskStatus;
       priority?: string;
-      dueDate?: string;
-      assigneeUserId?: string;
+      dueDate?: string | null;
+      assigneeUserId?: string | null;
+      assigneeUserIds?: string[];
     },
   ) => request<ApiTask>("/tasks", { method: "POST", body: JSON.stringify(data) }, token),
 
@@ -143,6 +153,7 @@ export const api = {
       priority: string | null;
       dueDate: string | null;
       assigneeUserId: string | null;
+      assigneeUserIds: string[];
     }>,
   ) => request<ApiTask>(`/tasks/${id}`, { method: "PATCH", body: JSON.stringify(data) }, token),
 

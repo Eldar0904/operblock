@@ -5,8 +5,10 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { ApiTask, Priority, TaskStatus } from "@/lib/mock-data";
 import type { ApiMember } from "@/lib/api";
+import { getTaskAssigneeIds } from "@/lib/task-status";
 import { useColumnConfig } from "@/i18n/use-labels";
 import { AssigneeAvatar, resolveAssignee } from "@/components/dashboard/AssigneeAvatar";
+import { DateTimeField } from "@/components/dashboard/DateTimeField";
 import { useComments, useCreateComment, useDeleteComment } from "@/hooks/useComments";
 
 export interface TaskFormData {
@@ -16,18 +18,20 @@ export interface TaskFormData {
   priority: Priority | "";
   dueDate: string;
   assigneeUserId: string | null;
+  assigneeUserIds: string[];
 }
 
 const emptyForm = (
   status: TaskStatus = "todo",
-  defaultAssignee: string | null = null,
+  defaultAssignees: string[] = [],
 ): TaskFormData => ({
   title: "",
   description: "",
   status,
   priority: "",
   dueDate: "",
-  assigneeUserId: defaultAssignee,
+  assigneeUserId: defaultAssignees[0] ?? null,
+  assigneeUserIds: defaultAssignees,
 });
 
 interface TaskModalProps {
@@ -39,12 +43,12 @@ interface TaskModalProps {
   isSubmitting?: boolean;
   currentUserId?: string;
   members?: ApiMember[];
-  /** When creating, default assignee to current user (Daily board). */
   defaultAssigneeToMe?: boolean;
-  /** Explicit default assignee when creating (null = Unassigned). Overrides defaultAssigneeToMe. */
   defaultAssigneeUserId?: string | null;
-  /** Hide the 5-stage status picker (Daily checklist uses todo/done only). */
   hideStatus?: boolean;
+  /** Daily board: multi-participant assign + pause/cancel in modal */
+  dailyMode?: boolean;
+  readOnly?: boolean;
 }
 
 export function TaskModal({
@@ -59,6 +63,8 @@ export function TaskModal({
   defaultAssigneeToMe = false,
   defaultAssigneeUserId,
   hideStatus = false,
+  dailyMode = false,
+  readOnly = false,
 }: TaskModalProps) {
   const { t } = useTranslation();
   const columns = useColumnConfig();
@@ -73,22 +79,24 @@ export function TaskModal({
     if (open) {
       setCommentText("");
       if (task) {
+        const ids = getTaskAssigneeIds(task);
         setForm({
           title: task.title,
           description: task.description ?? "",
           status: task.status,
           priority: task.priority ?? "",
           dueDate: task.dueDate ?? "",
-          assigneeUserId: task.assigneeUserId ?? null,
+          assigneeUserId: ids[0] ?? null,
+          assigneeUserIds: ids,
         });
       } else {
-        const assignee =
-          defaultAssigneeUserId !== undefined
-            ? defaultAssigneeUserId
-            : defaultAssigneeToMe && currentUserId
-              ? currentUserId
-              : null;
-        setForm(emptyForm(defaultStatus, assignee));
+        let assignees: string[] = [];
+        if (defaultAssigneeUserId !== undefined) {
+          assignees = defaultAssigneeUserId ? [defaultAssigneeUserId] : [];
+        } else if (defaultAssigneeToMe && currentUserId) {
+          assignees = [currentUserId];
+        }
+        setForm(emptyForm(defaultStatus, assignees));
       }
     }
   }, [open, task, defaultStatus, currentUserId, defaultAssigneeToMe, defaultAssigneeUserId]);
@@ -97,7 +105,7 @@ export function TaskModal({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.title.trim()) return;
+    if (!form.title.trim() || readOnly) return;
     if (hideStatus && !task) {
       onSubmit({ ...form, status: "todo" });
       return;
@@ -114,28 +122,38 @@ export function TaskModal({
     });
   };
 
-  const assigneeOptions = (() => {
-    const ids = new Set(members.map((m) => m.id));
-    if (currentUserId && !ids.has(currentUserId)) {
-      return [
-        {
-          id: currentUserId,
-          label: t("tasks.assigneeMe"),
-        },
-        ...members.map((m) => ({
-          id: m.id,
-          label: resolveAssignee(m.id, members, currentUserId)?.label ?? m.id,
-        })),
-      ];
-    }
-    return members.map((m) => ({
-      id: m.id,
-      label:
-        m.id === currentUserId
-          ? t("tasks.assigneeMe")
-          : resolveAssignee(m.id, members, currentUserId)?.label ?? m.id,
-    }));
-  })();
+  const toggleParticipant = (userId: string) => {
+    setForm((f) => {
+      const has = f.assigneeUserIds.includes(userId);
+      const next = has
+        ? f.assigneeUserIds.filter((id) => id !== userId)
+        : [...f.assigneeUserIds, userId];
+      return {
+        ...f,
+        assigneeUserIds: next,
+        assigneeUserId: next[0] ?? null,
+      };
+    });
+  };
+
+  const setTerminalStatus = (status: TaskStatus) => {
+    setForm((f) => ({ ...f, status }));
+    onSubmit({ ...form, status });
+  };
+
+  const memberLabel = (member: ApiMember) =>
+    resolveAssignee(member.id, members, currentUserId)?.label ?? member.id;
+
+  const assigneeOptions = members.map((m) => ({
+    id: m.id,
+    label: memberLabel(m),
+  }));
+
+  const showDailyActions =
+    dailyMode && task && !readOnly && form.status !== "paused" && form.status !== "canceled";
+
+  const showReopen =
+    dailyMode && task && !readOnly && (form.status === "paused" || form.status === "canceled");
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -143,7 +161,7 @@ export function TaskModal({
       <div className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-lg border border-border bg-background shadow-xl">
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-background px-5 py-4">
           <h2 className="text-base font-semibold">{task ? t("tasks.editTask") : t("tasks.addTask")}</h2>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
+          <button type="button" onClick={onClose} className="text-muted-foreground hover:text-foreground">
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -152,19 +170,21 @@ export function TaskModal({
             <label className="mb-1.5 block text-sm font-medium">{t("tasks.title")}</label>
             <input
               required
+              readOnly={readOnly}
               value={form.title}
               onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-              className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+              className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring disabled:opacity-60"
               placeholder={t("tasks.titlePlaceholder")}
             />
           </div>
           <div>
             <label className="mb-1.5 block text-sm font-medium">{t("tasks.description")}</label>
             <textarea
+              readOnly={readOnly}
               value={form.description}
               onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
               rows={3}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring disabled:opacity-60"
               placeholder={t("tasks.descriptionPlaceholder")}
             />
           </div>
@@ -173,9 +193,10 @@ export function TaskModal({
               <div>
                 <label className="mb-1.5 block text-sm font-medium">{t("tasks.status")}</label>
                 <select
+                  disabled={readOnly}
                   value={form.status}
                   onChange={(e) => setForm((f) => ({ ...f, status: e.target.value as TaskStatus }))}
-                  className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+                  className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring disabled:opacity-60"
                 >
                   {columns.map((col) => (
                     <option key={col.id} value={col.id}>
@@ -188,11 +209,12 @@ export function TaskModal({
             <div>
               <label className="mb-1.5 block text-sm font-medium">{t("tasks.priority")}</label>
               <select
+                disabled={readOnly}
                 value={form.priority}
                 onChange={(e) =>
                   setForm((f) => ({ ...f, priority: e.target.value as Priority | "" }))
                 }
-                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring disabled:opacity-60"
               >
                 <option value="">{t("priority.none")}</option>
                 <option value="low">{t("priority.low")}</option>
@@ -203,45 +225,122 @@ export function TaskModal({
           </div>
           <div>
             <label className="mb-1.5 block text-sm font-medium">{t("tasks.dueDate")}</label>
-            <input
+            <DateTimeField
               value={form.dueDate}
-              onChange={(e) => setForm((f) => ({ ...f, dueDate: e.target.value }))}
-              className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
-              placeholder={t("tasks.dueDatePlaceholder")}
+              onChange={(iso) => setForm((f) => ({ ...f, dueDate: iso }))}
             />
           </div>
-          <div>
-            <label className="mb-1.5 block text-sm font-medium">{t("tasks.assignee")}</label>
-            <select
-              value={form.assigneeUserId ?? ""}
-              onChange={(e) =>
-                setForm((f) => ({
-                  ...f,
-                  assigneeUserId: e.target.value || null,
-                }))
-              }
-              className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
-            >
-              <option value="">{t("tasks.unassigned")}</option>
-              {assigneeOptions.map((opt) => (
-                <option key={opt.id} value={opt.id}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="flex justify-end gap-2 pt-2">
-            <Button type="button" variant="outline" onClick={onClose}>
-              {t("common.cancel")}
-            </Button>
-            <Button
-              type="submit"
-              disabled={isSubmitting || !form.title.trim()}
-              className={cn("bg-indigo-600 hover:bg-indigo-700")}
-            >
-              {isSubmitting ? t("tasks.saving") : task ? t("tasks.saveChanges") : t("tasks.createTask")}
-            </Button>
-          </div>
+          {dailyMode ? (
+            <div>
+              <label className="mb-1.5 block text-sm font-medium">{t("tasks.participants")}</label>
+              <p className="mb-2 text-xs text-muted-foreground">{t("daily.participantsHint")}</p>
+              <div className="max-h-40 space-y-2 overflow-y-auto rounded-md border border-input p-2">
+                {members.map((member) => {
+                  const checked = form.assigneeUserIds.includes(member.id);
+                  return (
+                    <label
+                      key={member.id}
+                      className={cn(
+                        "flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-muted/50",
+                        readOnly && "pointer-events-none opacity-60",
+                      )}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        disabled={readOnly}
+                        onChange={() => toggleParticipant(member.id)}
+                        className="rounded border-input"
+                      />
+                      <AssigneeAvatar
+                        userId={member.id}
+                        members={members}
+                        currentUserId={currentUserId}
+                        showLabel
+                      />
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            <div>
+              <label className="mb-1.5 block text-sm font-medium">{t("tasks.assignee")}</label>
+              <select
+                disabled={readOnly}
+                value={form.assigneeUserId ?? ""}
+                onChange={(e) => {
+                  const id = e.target.value || null;
+                  setForm((f) => ({
+                    ...f,
+                    assigneeUserId: id,
+                    assigneeUserIds: id ? [id] : [],
+                  }));
+                }}
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring disabled:opacity-60"
+              >
+                <option value="">{t("tasks.unassigned")}</option>
+                {assigneeOptions.map((opt) => (
+                  <option key={opt.id} value={opt.id}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {(showDailyActions || showReopen) && (
+            <div className="flex flex-wrap gap-2 border-t border-border pt-3">
+              {showDailyActions && (
+                <>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={isSubmitting}
+                    onClick={() => setTerminalStatus("paused")}
+                  >
+                    {t("daily.pauseTask")}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={isSubmitting}
+                    onClick={() => setTerminalStatus("canceled")}
+                  >
+                    {t("daily.cancelTask")}
+                  </Button>
+                </>
+              )}
+              {showReopen && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={isSubmitting}
+                  onClick={() => setTerminalStatus("todo")}
+                >
+                  {t("daily.reopenTask")}
+                </Button>
+              )}
+            </div>
+          )}
+
+          {!readOnly && (
+            <div className="flex justify-end gap-2 pt-2">
+              <Button type="button" variant="outline" onClick={onClose}>
+                {t("common.cancel")}
+              </Button>
+              <Button
+                type="submit"
+                disabled={isSubmitting || !form.title.trim()}
+                className={cn("bg-indigo-600 hover:bg-indigo-700")}
+              >
+                {isSubmitting ? t("tasks.saving") : task ? t("tasks.saveChanges") : t("tasks.createTask")}
+              </Button>
+            </div>
+          )}
         </form>
 
         {task && (

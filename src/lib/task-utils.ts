@@ -1,6 +1,8 @@
 import i18n from "@/i18n";
 import type { ApiTask, Priority, TaskStatus } from "@/lib/mock-data";
 import { COLUMN_CONFIG } from "@/lib/mock-data";
+import { isTerminalTaskStatus } from "@/lib/task-status";
+import { formatDueDateDisplay } from "@/components/dashboard/DateTimeField";
 
 export function formatTicketId(id: string): string {
   const clean = id.replace(/-/g, "");
@@ -15,22 +17,25 @@ export function statusLabel(status: TaskStatus): string {
 }
 
 export function parseDueDate(dueDate: string): Date | null {
+  const iso = Date.parse(dueDate);
+  if (!Number.isNaN(iso)) return new Date(iso);
   for (const year of [2026, 2025, 2027]) {
     const parsed = Date.parse(`${dueDate} ${year}`);
     if (!Number.isNaN(parsed)) return new Date(parsed);
   }
-  const iso = Date.parse(dueDate);
-  return Number.isNaN(iso) ? null : new Date(iso);
+  return null;
+}
+
+export function formatTaskDueDate(dueDate: string | null | undefined): string {
+  if (!dueDate) return "";
+  return formatDueDateDisplay(dueDate, i18n.language);
 }
 
 export function isOverdue(task: ApiTask): boolean {
-  if (!task.dueDate || task.status === "done") return false;
+  if (!task.dueDate || isTerminalTaskStatus(task.status)) return false;
   const due = parseDueDate(task.dueDate);
   if (!due) return false;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  due.setHours(0, 0, 0, 0);
-  return due < today;
+  return due.getTime() < Date.now();
 }
 
 export function filterTasks(
@@ -88,7 +93,7 @@ export function groupByDueDate(tasks: ApiTask[]): Map<string, ApiTask[]> {
   });
 
   for (const task of sorted) {
-    const key = task.dueDate ?? i18n.t("tasks.noDueDate");
+    const key = task.dueDate ? formatTaskDueDate(task.dueDate) : i18n.t("tasks.noDueDate");
     const list = groups.get(key) ?? [];
     list.push(task);
     groups.set(key, list);

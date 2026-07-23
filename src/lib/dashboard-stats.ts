@@ -1,5 +1,6 @@
 import type { ApiTask } from "@/lib/mock-data";
 import { isOverdue } from "@/lib/task-utils";
+import { isTerminalTaskStatus } from "@/lib/task-status";
 
 export interface DailyHealthStats {
   open: number;
@@ -25,12 +26,12 @@ export function splitTasksByDaily(tasks: ApiTask[], dailyProjectIds: Set<string>
 }
 
 export function computeDailyHealth(tasks: ApiTask[]): DailyHealthStats {
-  const openTasks = tasks.filter((t) => t.status !== "done");
+  const openTasks = tasks.filter((t) => !isTerminalTaskStatus(t.status));
   return {
     open: openTasks.length,
     done: tasks.filter((t) => t.status === "done").length,
     overdue: tasks.filter(isOverdue).length,
-    unassignedOpen: openTasks.filter((t) => !t.assigneeUserId).length,
+    unassignedOpen: openTasks.filter((t) => !t.assigneeUserId && !(t.assigneeUserIds?.length)).length,
     total: tasks.length,
   };
 }
@@ -39,7 +40,7 @@ export function computeProjectsHealth(tasks: ApiTask[]): ProjectsHealthStats {
   const done = tasks.filter((t) => t.status === "done").length;
   const total = tasks.length;
   return {
-    open: tasks.filter((t) => t.status !== "done").length,
+    open: tasks.filter((t) => !isTerminalTaskStatus(t.status)).length,
     inReview: tasks.filter((t) => t.status === "in_review").length,
     overdue: tasks.filter(isOverdue).length,
     completionPct: total > 0 ? Math.round((done / total) * 100) : 0,
