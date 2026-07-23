@@ -352,7 +352,7 @@ export function DailyPersonBoard({
           </Button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="min-h-0 flex-1 overflow-y-auto p-4 lg:overflow-hidden">
           {all.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <p className="text-sm text-muted-foreground">{t("board.noTasks")}</p>
@@ -367,16 +367,29 @@ export function DailyPersonBoard({
               </Button>
             </div>
           ) : (
-            <div className="mx-auto w-full max-w-2xl space-y-4">
-              <ul className="space-y-2">{open.map((task) => renderCard(task, false))}</ul>
-              {done.length > 0 && (
-                <div className="space-y-2 border-t border-border/60 pt-4">
-                  <p className="px-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                    {t("daily.completedSection")}
-                  </p>
+            <div className="grid gap-4 lg:h-full lg:min-h-0 lg:grid-cols-2">
+              <section className="space-y-2 lg:min-h-0 lg:overflow-y-auto">
+                <p className="px-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                  {t("daily.openSection")}
+                  <span className="ml-1.5 font-normal normal-case">({open.length})</span>
+                </p>
+                {open.length > 0 ? (
+                  <ul className="space-y-2">{open.map((task) => renderCard(task, false))}</ul>
+                ) : (
+                  <p className="px-1 py-6 text-sm text-muted-foreground">{t("common.none")}</p>
+                )}
+              </section>
+              <section className="space-y-2 border-t border-border/60 pt-4 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-4">
+                <p className="px-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                  {t("daily.completedSection")}
+                  <span className="ml-1.5 font-normal normal-case">({done.length})</span>
+                </p>
+                {done.length > 0 ? (
                   <ul className="space-y-2">{done.map((task) => renderCard(task, true))}</ul>
-                </div>
-              )}
+                ) : (
+                  <p className="px-1 py-6 text-sm text-muted-foreground">{t("common.none")}</p>
+                )}
+              </section>
             </div>
           )}
         </div>
