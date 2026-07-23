@@ -179,18 +179,24 @@ router.patch("/:id", async (req, res) => {
     return res.status(503).json({ error: "Database not configured" });
   }
 
-  const { name, portfolioId, status } = req.body as {
+  const { name, portfolioId, status, isPrivate } = req.body as {
     name?: string;
     portfolioId?: string | null;
     status?: "active" | "paused" | "canceled";
+    isPrivate?: boolean;
   };
 
   if (name !== undefined && !name.trim()) {
     return res.status(400).json({ error: "name is required" });
   }
 
-  if (name === undefined && portfolioId === undefined && status === undefined) {
-    return res.status(400).json({ error: "name, portfolioId, or status is required" });
+  if (
+    name === undefined &&
+    portfolioId === undefined &&
+    status === undefined &&
+    isPrivate === undefined
+  ) {
+    return res.status(400).json({ error: "name, portfolioId, status, or isPrivate is required" });
   }
 
   try {
@@ -219,6 +225,7 @@ router.patch("/:id", async (req, res) => {
       portfolioId?: string | null;
       status?: "active" | "paused" | "canceled";
       statusChangedAt?: Date | null;
+      isPrivate?: boolean;
     } = {};
     if (name !== undefined) {
       updates.name = name.trim();
@@ -242,6 +249,9 @@ router.patch("/:id", async (req, res) => {
       updates.status = status;
       updates.statusChangedAt =
         status === "active" ? null : new Date();
+    }
+    if (isPrivate !== undefined) {
+      updates.isPrivate = Boolean(isPrivate);
     }
 
     const [project] = await db

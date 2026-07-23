@@ -102,7 +102,7 @@ export const api = {
   updateProject: (
     token: string | null,
     id: string,
-    data: Partial<{ name: string; portfolioId: string | null; status: ProjectStatus }>,
+    data: Partial<{ name: string; portfolioId: string | null; status: ProjectStatus; isPrivate: boolean }>,
   ) =>
     request<ApiProject>(`/projects/${id}`, { method: "PATCH", body: JSON.stringify(data) }, token),
 

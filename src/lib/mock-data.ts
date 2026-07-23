@@ -32,6 +32,7 @@ export interface ApiProject {
   orgId: string;
   name: string;
   isPersonal?: boolean;
+  isPrivate?: boolean;
   status?: ProjectStatus;
   statusChangedAt?: string | null;
   createdByUserId?: string | null;

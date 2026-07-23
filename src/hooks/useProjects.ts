@@ -100,6 +100,7 @@ export function useUpdateProject() {
       name?: string;
       portfolioId?: string | null;
       status?: ApiProject["status"];
+      isPrivate?: boolean;
     }) => {
       const token = await getToken();
       return api.updateProject(token, id, data);

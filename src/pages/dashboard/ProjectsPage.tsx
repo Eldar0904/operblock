@@ -1,5 +1,5 @@
 ﻿import { useEffect, useMemo, useState } from "react";
-import { Plus, Search, Trash2 } from "lucide-react";
+import { Plus, Search, Trash2, Lock, Unlock } from "lucide-react";
 import {
   useSearchParams,
   useLocation,
@@ -26,6 +26,7 @@ import {
 } from "@/hooks/useProjects";
 import type { ApiTask, Priority, ProjectStatus, TaskStatus } from "@/lib/mock-data";
 import { filterTasks } from "@/lib/task-utils";
+import { canAccessProjectContents, isProjectCreator as checkIsProjectCreator } from "@/lib/project-access";
 import { ApiError } from "@/lib/api";
 import { BoardView } from "@/components/dashboard/BoardView";
 import { ListView } from "@/components/dashboard/ListView";
@@ -87,8 +88,13 @@ export default function ProjectsPage() {
     if (isDailyRoute || projectsLoading) return;
     if (!projectId || !routeProject) {
       navigate("/dashboard/projects", { replace: true });
+      return;
     }
-  }, [isDailyRoute, projectsLoading, projectId, routeProject, navigate]);
+    if (!canAccessProjectContents(routeProject, userId)) {
+      showToast(t("projects.privateCannotOpen"), "error");
+      navigate("/dashboard/projects", { replace: true });
+    }
+  }, [isDailyRoute, projectsLoading, projectId, routeProject, navigate, userId, showToast, t]);
 
   const filteredTasks = useMemo(
     () => filterTasks(tasks, { search, priority: priorityFilter }),
@@ -205,12 +211,17 @@ export default function ProjectsPage() {
     openAddModal("todo", assigneeUserId);
   };
 
-  const isProjectCreator =
-    activeProject?.createdByUserId == null || activeProject.createdByUserId === userId;
+  const canManageProject =
+    activeProject ? checkIsProjectCreator(activeProject, userId) : false;
 
   const setProjectStatus = (status: ProjectStatus) => {
-    if (!activeProject || isDailyRoute || !isProjectCreator) return;
+    if (!activeProject || isDailyRoute || !canManageProject) return;
     updateProject.mutate({ id: activeProject.id, status });
+  };
+
+  const toggleProjectPrivate = () => {
+    if (!activeProject || isDailyRoute || !canManageProject) return;
+    updateProject.mutate({ id: activeProject.id, isPrivate: !activeProject.isPrivate });
   };
 
   const isSubmitting = createTask.isPending || updateTask.isPending;
@@ -295,8 +306,26 @@ export default function ProjectsPage() {
         <div className="flex items-center gap-2 py-2">
           <PriorityFilter value={priorityFilter} onChange={setPriorityFilter} />
           <MembersDropdown />
-          {!isDailyRoute && activeProject && isProjectCreator && (
+          {!isDailyRoute && activeProject && canManageProject && (
             <>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={toggleProjectPrivate}
+                disabled={updateProject.isPending}
+                title={
+                  activeProject.isPrivate
+                    ? t("projects.makePublic")
+                    : t("projects.makePrivate")
+                }
+              >
+                {activeProject.isPrivate ? (
+                  <Unlock className="h-3.5 w-3.5" />
+                ) : (
+                  <Lock className="h-3.5 w-3.5" />
+                )}
+                {activeProject.isPrivate ? t("projects.makePublic") : t("projects.makePrivate")}
+              </Button>
               {activeProject.status === "active" && (
                 <>
                   <Button
@@ -329,7 +358,7 @@ export default function ProjectsPage() {
               )}
             </>
           )}
-          {!isDailyRoute && activeProject && isProjectCreator && (
+          {!isDailyRoute && activeProject && canManageProject && (
             <Button
               size="sm"
               variant="outline"

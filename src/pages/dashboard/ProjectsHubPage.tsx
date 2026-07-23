@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
-import { AlertTriangle, CheckCircle2, FolderKanban, Layers, Plus } from "lucide-react";
+import { AlertTriangle, CheckCircle2, FolderKanban, Layers, Lock, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { UserButton } from "@clerk/clerk-react";
+import { useAuth, UserButton } from "@clerk/clerk-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { NotificationsDropdown } from "@/components/dashboard/NotificationsDropdown";
@@ -10,10 +10,12 @@ import { useCreateProject, useProjects } from "@/hooks/useProjects";
 import { usePortfolios } from "@/hooks/usePortfolios";
 import { useAllTasks } from "@/hooks/useTasks";
 import { computeTaskStats } from "@/lib/task-utils";
+import { canAccessProjectContents } from "@/lib/project-access";
 
 export default function ProjectsHubPage() {
   const { t } = useTranslation();
   const { showToast } = useToast();
+  const { userId } = useAuth();
   const navigate = useNavigate();
   const { data: projects = [], isLoading: projectsLoading } = useProjects();
   const { data: portfolios = [] } = usePortfolios();
@@ -39,7 +41,8 @@ export default function ProjectsHubPage() {
   const cards = useMemo(
     () =>
       projects.map((project) => {
-        const projectTasks = tasksByProject.get(project.id) ?? [];
+        const canOpen = canAccessProjectContents(project, userId);
+        const projectTasks = canOpen ? (tasksByProject.get(project.id) ?? []) : [];
         const stats = computeTaskStats(projectTasks);
         return {
           project,
@@ -47,9 +50,10 @@ export default function ProjectsHubPage() {
             ? portfolioNameById[project.portfolioId]
             : undefined,
           stats,
+          canOpen,
         };
       }),
-    [projects, tasksByProject, portfolioNameById],
+    [projects, tasksByProject, portfolioNameById, userId],
   );
 
   const handleCreateProject = (e: React.FormEvent) => {
@@ -67,6 +71,15 @@ export default function ProjectsHubPage() {
         onError: () => showToast(t("tasks.somethingWrong"), "error"),
       },
     );
+  };
+
+  const openProject = (projectId: string, canOpen: boolean) => {
+    if (!canOpen) {
+      showToast(t("projects.privateCannotOpen"), "error");
+      return;
+    }
+    localStorage.setItem("operblock-active-project", projectId);
+    navigate(`/dashboard/projects/${projectId}`);
   };
 
   const loading = projectsLoading || tasksLoading;
@@ -143,46 +156,58 @@ export default function ProjectsHubPage() {
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {cards.map(({ project, portfolioName, stats }) => (
+              {cards.map(({ project, portfolioName, stats, canOpen }) => (
                 <button
                   key={project.id}
                   type="button"
-                  onClick={() => {
-                    localStorage.setItem("operblock-active-project", project.id);
-                    navigate(`/dashboard/projects/${project.id}`);
-                  }}
+                  onClick={() => openProject(project.id, canOpen)}
                   className="rounded-lg border border-border bg-background p-5 text-left transition-colors hover:border-indigo-200 hover:bg-indigo-50/40"
                 >
                   <div className="mb-3 flex items-start gap-3">
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-indigo-50 text-indigo-600">
-                      <FolderKanban className="h-4 w-4" />
+                      {project.isPrivate ? (
+                        <Lock className="h-4 w-4" />
+                      ) : (
+                        <FolderKanban className="h-4 w-4" />
+                      )}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <h3 className="truncate font-semibold text-foreground">{project.name}</h3>
+                      <div className="flex items-center gap-2">
+                        <h3 className="truncate font-semibold text-foreground">{project.name}</h3>
+                        {project.isPrivate && (
+                          <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                            {t("projects.private")}
+                          </span>
+                        )}
+                      </div>
                       <p className="mt-0.5 truncate text-xs text-muted-foreground">
                         {portfolioName ?? t("portfolios.ungrouped")}
                       </p>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2">
-                    <HubStat
-                      icon={Layers}
-                      label={t("overview.totalTasks")}
-                      value={stats.total}
-                    />
-                    <HubStat
-                      icon={CheckCircle2}
-                      label={t("overview.completion")}
-                      value={`${stats.completionPct}%`}
-                    />
-                    <HubStat
-                      icon={AlertTriangle}
-                      label={t("overview.overdue")}
-                      value={stats.overdue}
-                      warn={stats.overdue > 0}
-                    />
-                  </div>
+                  {canOpen ? (
+                    <div className="grid grid-cols-3 gap-2">
+                      <HubStat
+                        icon={Layers}
+                        label={t("overview.totalTasks")}
+                        value={stats.total}
+                      />
+                      <HubStat
+                        icon={CheckCircle2}
+                        label={t("overview.completion")}
+                        value={`${stats.completionPct}%`}
+                      />
+                      <HubStat
+                        icon={AlertTriangle}
+                        label={t("overview.overdue")}
+                        value={stats.overdue}
+                        warn={stats.overdue > 0}
+                      />
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">{t("projects.privateLocked")}</p>
+                  )}
                 </button>
               ))}
             </div>

@@ -18,6 +18,16 @@ const router = Router();
 
 router.use(requireClerkAuth);
 
+function canViewProjectContents(
+  project: { isPersonal: boolean; isPrivate: boolean; createdByUserId: string | null },
+  userId: string | null | undefined,
+): boolean {
+  if (project.isPersonal) return true;
+  if (!project.isPrivate) return true;
+  if (!project.createdByUserId) return true;
+  return Boolean(userId && project.createdByUserId === userId);
+}
+
 async function enrichTasks(db: ReturnType<typeof getDb>, rows: (typeof schema.tasks.$inferSelect)[]) {
   const assigneeMap = await loadAssigneesByTaskIds(
     db,
@@ -34,13 +44,33 @@ router.get("/", async (req, res) => {
   }
 
   const projectId = req.query.projectId as string | undefined;
+  const userId = getClerkUserId(req);
 
   try {
     const db = getDb();
-    const rows = projectId
-      ? await db.select().from(schema.tasks).where(eq(schema.tasks.projectId, projectId))
-      : await db.select().from(schema.tasks);
 
+    if (projectId) {
+      const [project] = await db
+        .select()
+        .from(schema.projects)
+        .where(eq(schema.projects.id, projectId))
+        .limit(1);
+      if (!project) {
+        return res.status(404).json({ error: "Project not found" });
+      }
+      if (!canViewProjectContents(project, userId)) {
+        return res.status(403).json({ error: "This project is private" });
+      }
+      const rows = await db.select().from(schema.tasks).where(eq(schema.tasks.projectId, projectId));
+      return res.json(await enrichTasks(db, rows));
+    }
+
+    const allProjects = await db.select().from(schema.projects);
+    const visibleProjectIds = new Set(
+      allProjects.filter((p) => canViewProjectContents(p, userId)).map((p) => p.id),
+    );
+    const allTasks = await db.select().from(schema.tasks);
+    const rows = allTasks.filter((task) => visibleProjectIds.has(task.projectId));
     res.json(await enrichTasks(db, rows));
   } catch (err) {
     console.error("GET /tasks error:", err);

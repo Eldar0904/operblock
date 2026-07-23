@@ -50,6 +50,7 @@ export const projects = pgTable("projects", {
   }),
   name: text("name").notNull(),
   isPersonal: boolean("is_personal").notNull().default(false),
+  isPrivate: boolean("is_private").notNull().default(false),
   status: projectStatusEnum("status").notNull().default("active"),
   statusChangedAt: timestamp("status_changed_at", { withTimezone: true }),
   createdByUserId: text("created_by_user_id"),

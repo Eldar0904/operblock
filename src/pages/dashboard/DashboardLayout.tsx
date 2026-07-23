@@ -10,6 +10,7 @@ import {
   LayoutDashboard,
   LayoutGrid,
   List,
+  Lock,
   MoreHorizontal,
   Pencil,
   Plus,
@@ -35,6 +36,7 @@ import {
 } from "@/hooks/usePortfolios";
 import { ApiError } from "@/lib/api";
 import type { ApiPortfolio, ApiProject } from "@/lib/mock-data";
+import { canAccessProjectContents } from "@/lib/project-access";
 import { useToast } from "@/components/ui/toast";
 
 const ACTIVE_PROJECT_KEY = "operblock-active-project";
@@ -139,6 +141,10 @@ export default function DashboardLayout() {
   };
 
   const selectProject = (project: ApiProject) => {
+    if (!canAccessProjectContents(project, userId)) {
+      showToast(t("projects.privateCannotOpen"), "error");
+      return;
+    }
     setActiveProjectId(project.id);
     localStorage.setItem(ACTIVE_PROJECT_KEY, project.id);
     setMenuProjectId(null);
@@ -264,21 +270,30 @@ export default function DashboardLayout() {
         : "text-sidebar-foreground hover:bg-sidebar-accent",
     );
 
-  const renderProjectRow = (project: ApiProject) => (
+  const renderProjectRow = (project: ApiProject) => {
+    const locked = !canAccessProjectContents(project, userId);
+    return (
     <div key={project.id} className="group relative">
       <button
         type="button"
         onClick={() => selectProject(project)}
+        title={locked ? t("projects.privateLocked") : project.name}
         className={cn(
           "flex w-full items-center gap-2 rounded-md py-1.5 pl-3 pr-7 text-left text-sm transition-colors",
           highlightedProjectId === project.id
             ? "bg-indigo-50 font-medium text-indigo-700"
             : "text-sidebar-foreground hover:bg-sidebar-accent",
+          locked && "opacity-80",
         )}
       >
-        <FolderKanban className="h-3.5 w-3.5 shrink-0" />
+        {locked ? (
+          <Lock className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+        ) : (
+          <FolderKanban className="h-3.5 w-3.5 shrink-0" />
+        )}
         <span className="truncate">{project.name}</span>
       </button>
+      {!locked && (
       <button
         type="button"
         onClick={(e) => {
@@ -294,7 +309,8 @@ export default function DashboardLayout() {
       >
         <MoreHorizontal className="h-3.5 w-3.5" />
       </button>
-      {menuProjectId === project.id && (
+      )}
+      {menuProjectId === project.id && !locked && (
         <div className="absolute right-0 z-20 mt-0.5 w-44 rounded-md border border-border bg-background p-1 shadow-md">
           <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
             {t("portfolios.moveTo")}
@@ -325,7 +341,8 @@ export default function DashboardLayout() {
         </div>
       )}
     </div>
-  );
+    );
+  };
 
   const renderPortfolioSection = (portfolio: ApiPortfolio) => {
     const items = projectsByPortfolio.get(portfolio.id) ?? [];

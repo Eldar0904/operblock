@@ -50,6 +50,13 @@
       "when": 1722300000000,
       "tag": "0007_status_participants_due",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1722400000000,
+      "tag": "0008_project_is_private",
+      "breakpoints": true
     }
   ]
 }
