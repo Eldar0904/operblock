@@ -18,6 +18,7 @@ import { TaskModal, type TaskFormData } from "@/components/dashboard/TaskModal";
 import { NotificationsDropdown } from "@/components/dashboard/NotificationsDropdown";
 import { PriorityFilter } from "@/components/dashboard/PriorityFilter";
 import { useToast } from "@/components/ui/toast";
+import { useUploadPendingAttachments } from "@/hooks/useUploadPendingAttachments";
 
 export default function MyTasksPage() {
   const { t } = useTranslation();
@@ -30,6 +31,8 @@ export default function MyTasksPage() {
   const createTask = useCreateTask();
   const updateTask = useUpdateTask();
   const deleteTask = useDeleteTask();
+  const uploadPendingAttachments = useUploadPendingAttachments();
+  const [isUploadingAttachments, setIsUploadingAttachments] = useState(false);
 
   const [search, setSearch] = useState("");
   const [priorityFilter, setPriorityFilter] = useState<Priority | "all">("all");
@@ -59,7 +62,7 @@ export default function MyTasksPage() {
     setModalOpen(true);
   };
 
-  const handleModalSubmit = (form: TaskFormData) => {
+  const handleModalSubmit = (form: TaskFormData, pendingFiles?: File[]) => {
     if (editingTask) {
       updateTask.mutate(
         {
@@ -86,7 +89,19 @@ export default function MyTasksPage() {
           assigneeUserId: form.assigneeUserIds[0] ?? userId ?? undefined,
           assigneeUserIds: form.assigneeUserIds.length ? form.assigneeUserIds : userId ? [userId] : [],
         },
-        { onSuccess: () => setModalOpen(false) },
+        {
+          onSuccess: async (created) => {
+            if (pendingFiles?.length) {
+              setIsUploadingAttachments(true);
+              try {
+                await uploadPendingAttachments(created.id, pendingFiles);
+              } finally {
+                setIsUploadingAttachments(false);
+              }
+            }
+            setModalOpen(false);
+          },
+        },
       );
     } else {
       showToast(t("tasks.somethingWrong"), "error");
@@ -167,7 +182,7 @@ export default function MyTasksPage() {
         onClose={() => setModalOpen(false)}
         onSubmit={handleModalSubmit}
         task={editingTask}
-        isSubmitting={createTask.isPending || updateTask.isPending}
+        isSubmitting={createTask.isPending || updateTask.isPending || isUploadingAttachments}
         currentUserId={userId ?? undefined}
         members={members}
         defaultAssigneeToMe

@@ -39,6 +39,7 @@ import { NotificationsDropdown } from "@/components/dashboard/NotificationsDropd
 import { MembersDropdown } from "@/components/dashboard/MembersDropdown";
 import { PriorityFilter } from "@/components/dashboard/PriorityFilter";
 import { useToast } from "@/components/ui/toast";
+import { useUploadPendingAttachments } from "@/hooks/useUploadPendingAttachments";
 
 const VIEW_TAB_KEYS = ["overview", "list", "board", "timeline", "files"] as const;
 type ViewTabKey = (typeof VIEW_TAB_KEYS)[number];
@@ -71,6 +72,8 @@ export default function ProjectsPage() {
   const updateStatus = useUpdateTaskStatus();
   const deleteTask = useDeleteTask();
   const deleteProject = useDeleteProject();
+  const uploadPendingAttachments = useUploadPendingAttachments();
+  const [isUploadingAttachments, setIsUploadingAttachments] = useState(false);
 
   const [search, setSearch] = useState("");
   const [priorityFilter, setPriorityFilter] = useState<Priority | "all">("all");
@@ -124,7 +127,7 @@ export default function ProjectsPage() {
     setModalOpen(true);
   };
 
-  const handleModalSubmit = (form: TaskFormData) => {
+  const handleModalSubmit = (form: TaskFormData, pendingFiles?: File[]) => {
     const assigneeUserIds = form.assigneeUserIds;
     const assigneeUserId = assigneeUserIds[0] ?? null;
     if (editingTask) {
@@ -153,7 +156,19 @@ export default function ProjectsPage() {
           assigneeUserId: assigneeUserId ?? undefined,
           assigneeUserIds,
         },
-        { onSuccess: () => setModalOpen(false) },
+        {
+          onSuccess: async (created) => {
+            if (pendingFiles?.length) {
+              setIsUploadingAttachments(true);
+              try {
+                await uploadPendingAttachments(created.id, pendingFiles);
+              } finally {
+                setIsUploadingAttachments(false);
+              }
+            }
+            setModalOpen(false);
+          },
+        },
       );
     } else {
       showToast(t("projects.needProjectFirst"), "error");
@@ -224,7 +239,7 @@ export default function ProjectsPage() {
     updateProject.mutate({ id: activeProject.id, isPrivate: !activeProject.isPrivate });
   };
 
-  const isSubmitting = createTask.isPending || updateTask.isPending;
+  const isSubmitting = createTask.isPending || updateTask.isPending || isUploadingAttachments;
   const pageLoading = isDailyRoute
     ? dailyLoading || isLoading
     : projectsLoading || isLoading;

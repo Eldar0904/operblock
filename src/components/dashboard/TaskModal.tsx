@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { Download, Paperclip, Trash2, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,8 @@ import {
   useDownloadAttachment,
   useUploadAttachment,
 } from "@/hooks/useAttachments";
+
+const MAX_PENDING_BYTES = 10 * 1024 * 1024;
 
 export interface TaskFormData {
   title: string;
@@ -43,7 +45,7 @@ const emptyForm = (
 interface TaskModalProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (data: TaskFormData) => void;
+  onSubmit: (data: TaskFormData, pendingFiles?: File[]) => void;
   task?: ApiTask | null;
   defaultStatus?: TaskStatus;
   isSubmitting?: boolean;
@@ -56,6 +58,8 @@ interface TaskModalProps {
   dailyMode?: boolean;
   readOnly?: boolean;
 }
+
+type PendingFile = { key: string; file: File };
 
 export function TaskModal({
   open,
@@ -74,9 +78,13 @@ export function TaskModal({
 }: TaskModalProps) {
   const { t } = useTranslation();
   const columns = useColumnConfig();
+  const pendingKeyPrefix = useId();
   const [form, setForm] = useState<TaskFormData>(emptyForm(defaultStatus));
   const [commentText, setCommentText] = useState("");
+  const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([]);
+  const [pendingError, setPendingError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const pendingIdRef = useRef(0);
 
   const { data: comments = [], isLoading: commentsLoading } = useComments(task?.id);
   const createComment = useCreateComment(task?.id);
@@ -90,6 +98,8 @@ export function TaskModal({
   useEffect(() => {
     if (open) {
       setCommentText("");
+      setPendingFiles([]);
+      setPendingError(null);
       if (task) {
         const ids = getTaskAssigneeIds(task);
         setForm({
@@ -115,14 +125,18 @@ export function TaskModal({
 
   if (!open) return null;
 
+  const submitForm = (next: TaskFormData) => {
+    onSubmit(next, task ? undefined : pendingFiles.map((item) => item.file));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.title.trim() || readOnly) return;
     if (hideStatus && !task) {
-      onSubmit({ ...form, status: "todo" });
+      submitForm({ ...form, status: "todo" });
       return;
     }
-    onSubmit(form);
+    submitForm(form);
   };
 
   const handleAddComment = (e: React.FormEvent) => {
@@ -137,8 +151,24 @@ export function TaskModal({
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = "";
-    if (!file || !task || readOnly) return;
-    uploadAttachment.mutate(file);
+    if (!file || readOnly) return;
+
+    if (task) {
+      uploadAttachment.mutate(file);
+      return;
+    }
+
+    if (!file.size || file.size > MAX_PENDING_BYTES) {
+      setPendingError(t("attachments.tooLarge"));
+      return;
+    }
+
+    setPendingError(null);
+    pendingIdRef.current += 1;
+    setPendingFiles((prev) => [
+      ...prev,
+      { key: `${pendingKeyPrefix}-${pendingIdRef.current}`, file },
+    ]);
   };
 
   const formatFileSize = (bytes: number) => {
@@ -179,6 +209,10 @@ export function TaskModal({
 
   const showReopen =
     dailyMode && task && !readOnly && (form.status === "paused" || form.status === "canceled");
+
+  const showAttachments = Boolean(task) || !readOnly;
+  const fileInputAccept =
+    ".pdf,.png,.jpg,.jpeg,.gif,.webp,.heic,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,application/pdf,image/*,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,text/plain,text/csv";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -368,7 +402,7 @@ export function TaskModal({
           )}
         </form>
 
-        {task && (
+        {showAttachments && (
           <div className="border-t border-border px-5 py-4">
             <div className="mb-3 flex items-center justify-between gap-2">
               <h3 className="text-sm font-semibold">{t("attachments.title")}</h3>
@@ -378,68 +412,105 @@ export function TaskModal({
                     ref={fileInputRef}
                     type="file"
                     className="hidden"
-                    accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.heic,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,application/pdf,image/*,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,text/plain,text/csv"
+                    accept={fileInputAccept}
                     onChange={handleFileChange}
                   />
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
-                    disabled={uploadAttachment.isPending}
+                    disabled={Boolean(task) && uploadAttachment.isPending}
                     onClick={() => fileInputRef.current?.click()}
                   >
                     <Paperclip className="mr-1.5 h-3.5 w-3.5" />
-                    {uploadAttachment.isPending ? t("attachments.uploading") : t("attachments.attach")}
+                    {task && uploadAttachment.isPending
+                      ? t("attachments.uploading")
+                      : t("attachments.attach")}
                   </Button>
                 </>
               )}
             </div>
-            <p className="mb-3 text-xs text-muted-foreground">{t("attachments.hint")}</p>
-            {attachmentsLoading ? (
-              <p className="text-xs text-muted-foreground">{t("common.loading")}</p>
-            ) : attachments.length === 0 ? (
-              <p className="mb-1 text-xs text-muted-foreground">{t("attachments.empty")}</p>
-            ) : (
-              <ul className="mb-1 max-h-40 space-y-2 overflow-y-auto">
-                {attachments.map((file) => (
-                  <li
-                    key={file.id}
-                    className="flex items-center justify-between gap-2 rounded-md bg-muted/40 px-3 py-2"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">{file.fileName}</p>
-                      <p className="text-[10px] text-muted-foreground">
-                        {formatFileSize(file.sizeBytes)} · {new Date(file.createdAt).toLocaleString()}
-                      </p>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-0.5">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7"
-                        disabled={downloadAttachment.isPending}
-                        onClick={() =>
-                          downloadAttachment.mutate({ id: file.id, fileName: file.fileName })
-                        }
-                        title={t("attachments.download")}
-                      >
-                        <Download className="h-3.5 w-3.5" />
-                      </Button>
-                      {!readOnly && (
+            <p className="mb-3 text-xs text-muted-foreground">
+              {task ? t("attachments.hint") : t("attachments.pendingHint")}
+            </p>
+            {pendingError && <p className="mb-2 text-xs text-red-600">{pendingError}</p>}
+            {task ? (
+              attachmentsLoading ? (
+                <p className="text-xs text-muted-foreground">{t("common.loading")}</p>
+              ) : attachments.length === 0 ? (
+                <p className="mb-1 text-xs text-muted-foreground">{t("attachments.empty")}</p>
+              ) : (
+                <ul className="mb-1 max-h-40 space-y-2 overflow-y-auto">
+                  {attachments.map((file) => (
+                    <li
+                      key={file.id}
+                      className="flex items-center justify-between gap-2 rounded-md bg-muted/40 px-3 py-2"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium">{file.fileName}</p>
+                        <p className="text-[10px] text-muted-foreground">
+                          {formatFileSize(file.sizeBytes)} · {new Date(file.createdAt).toLocaleString()}
+                        </p>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-0.5">
                         <Button
                           type="button"
                           variant="ghost"
                           size="icon"
-                          className="h-7 w-7 text-red-600 hover:text-red-700"
-                          disabled={deleteAttachment.isPending}
-                          onClick={() => deleteAttachment.mutate(file.id)}
-                          title={t("attachments.delete")}
+                          className="h-7 w-7"
+                          disabled={downloadAttachment.isPending}
+                          onClick={() =>
+                            downloadAttachment.mutate({ id: file.id, fileName: file.fileName })
+                          }
+                          title={t("attachments.download")}
                         >
-                          <Trash2 className="h-3.5 w-3.5" />
+                          <Download className="h-3.5 w-3.5" />
                         </Button>
-                      )}
+                        {!readOnly && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-red-600 hover:text-red-700"
+                            disabled={deleteAttachment.isPending}
+                            onClick={() => deleteAttachment.mutate(file.id)}
+                            title={t("attachments.delete")}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )
+            ) : pendingFiles.length === 0 ? (
+              <p className="mb-1 text-xs text-muted-foreground">{t("attachments.empty")}</p>
+            ) : (
+              <ul className="mb-1 max-h-40 space-y-2 overflow-y-auto">
+                {pendingFiles.map((item) => (
+                  <li
+                    key={item.key}
+                    className="flex items-center justify-between gap-2 rounded-md bg-muted/40 px-3 py-2"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium">{item.file.name}</p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {formatFileSize(item.file.size)}
+                      </p>
                     </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-red-600 hover:text-red-700"
+                      onClick={() =>
+                        setPendingFiles((prev) => prev.filter((entry) => entry.key !== item.key))
+                      }
+                      title={t("attachments.delete")}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
                   </li>
                 ))}
               </ul>
