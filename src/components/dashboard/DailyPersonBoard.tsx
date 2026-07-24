@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Calendar, Check, Layers, Pencil, Plus, Trash2, UserRound } from "lucide-react";
+import { Calendar, Layers, Pencil, Plus, Trash2, UserRound } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -16,6 +16,7 @@ const CANCELED_KEY = "__canceled__";
 const ACTIVE_TAB_KEY = "operblock-daily-person-tab";
 
 type TabKind = "general" | "person" | "paused" | "canceled";
+type DropColumn = "open" | "done";
 
 interface BoardTab {
   key: string;
@@ -55,6 +56,8 @@ export function DailyPersonBoard({
 }: DailyPersonBoardProps) {
   const { t } = useTranslation();
   const priorityLabel = usePriorityLabel();
+  const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null);
+  const [dropTarget, setDropTarget] = useState<DropColumn | null>(null);
 
   const tabs: BoardTab[] = useMemo(() => {
     const memberIds = new Set(members.map((m) => m.id));
@@ -182,16 +185,25 @@ export function DailyPersonBoard({
       );
       const inbox = openTasks.filter((task) => getTaskAssigneeIds(task).length === 0);
       const collab = openTasks.filter((task) => getTaskAssigneeIds(task).length >= 2);
+      const generalDone = tasks.filter((task) => {
+        if (task.status !== "done") return false;
+        const ids = getTaskAssigneeIds(task);
+        return ids.length === 0 || ids.length >= 2;
+      });
       return {
         open: [...inbox, ...collab],
-        done: [] as ApiTask[],
+        done: generalDone,
         all: [...inbox, ...collab],
         inbox,
         collab,
       };
     }
     const userId = tab.assigneeUserId!;
-    const relevant = tasks.filter((task) => getTaskAssigneeIds(task).includes(userId) && (task.status === "done" || isDailyOpenStatus(task.status)));
+    const relevant = tasks.filter(
+      (task) =>
+        getTaskAssigneeIds(task).includes(userId) &&
+        (task.status === "done" || isDailyOpenStatus(task.status)),
+    );
     return { ...splitOpenDone(relevant), inbox: [] as ApiTask[], collab: [] as ApiTask[] };
   };
 
@@ -210,6 +222,19 @@ export function DailyPersonBoard({
     }).length;
   };
 
+  const handleDropOnColumn = (column: DropColumn, tab: BoardTab) => {
+    if (!draggingTaskId) return;
+    const task = tasks.find((item) => item.id === draggingTaskId);
+    setDraggingTaskId(null);
+    setDropTarget(null);
+    if (!task || !canMutateTask(task, tab)) return;
+
+    const markDone = column === "done";
+    const isDone = task.status === "done";
+    if (markDone === isDone) return;
+    onToggleDone(task, markDone);
+  };
+
   const renderOccupants = (task: ApiTask) => {
     const ids = getTaskAssigneeIds(task);
     if (ids.length === 0) return null;
@@ -224,35 +249,28 @@ export function DailyPersonBoard({
 
   const renderCard = (task: ApiTask, done: boolean, tab: BoardTab) => {
     const mutable = canMutateTask(task, tab);
-    const showCheckbox = tab.kind === "person" || tab.kind === "general";
+    const canDrag = mutable && (tab.kind === "person" || tab.kind === "general");
     return (
       <li
         key={task.id}
+        draggable={canDrag}
+        onDragStart={() => {
+          if (!canDrag) return;
+          setDraggingTaskId(task.id);
+        }}
+        onDragEnd={() => {
+          setDraggingTaskId(null);
+          setDropTarget(null);
+        }}
         className={cn(
           "rounded-md border border-border bg-background p-3 shadow-sm",
           done && "bg-muted/30 opacity-80",
           (tab.kind === "paused" || tab.kind === "canceled") && "opacity-90",
+          canDrag && "cursor-grab active:cursor-grabbing",
+          draggingTaskId === task.id && "opacity-60",
         )}
       >
         <div className="flex items-start gap-2">
-          {showCheckbox && mutable ? (
-            <button
-              type="button"
-              onClick={() => onToggleDone(task, !done)}
-              className={cn(
-                "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border transition-colors",
-                done
-                  ? "border-indigo-600 bg-indigo-600 text-white"
-                  : "border-input bg-background hover:border-indigo-400",
-              )}
-              title={done ? t("daily.markOpen") : t("daily.markDone")}
-              aria-label={done ? t("daily.markOpen") : t("daily.markDone")}
-            >
-              {done && <Check className="h-3.5 w-3.5" strokeWidth={3} />}
-            </button>
-          ) : (
-            <div className="mt-0.5 h-5 w-5 shrink-0" />
-          )}
           <div className="min-w-0 flex-1">
             <p
               className={cn(
@@ -262,7 +280,8 @@ export function DailyPersonBoard({
             >
               {task.title}
             </p>
-            {(tab.kind === "paused" || tab.kind === "canceled") && renderOccupants(task)}
+            {(tab.kind === "paused" || tab.kind === "canceled" || (tab.kind === "general" && !done)) &&
+              renderOccupants(task)}
             <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
               {task.priority && (
                 <span
@@ -307,14 +326,76 @@ export function DailyPersonBoard({
     );
   };
 
-  const renderColumn = (title: string, items: ApiTask[], done: boolean, tab: BoardTab) => (
-    <section className="space-y-2 lg:min-h-0 lg:overflow-y-auto">
+  const renderDropColumn = (
+    title: string,
+    items: ApiTask[],
+    column: DropColumn,
+    tab: BoardTab,
+  ) => (
+    <section
+      className={cn(
+        "space-y-2 rounded-md p-1 transition-colors lg:min-h-0 lg:overflow-y-auto",
+        dropTarget === column && draggingTaskId && "bg-indigo-50 ring-2 ring-indigo-200",
+      )}
+      onDragOver={(e) => {
+        e.preventDefault();
+        if (draggingTaskId) setDropTarget(column);
+      }}
+      onDragLeave={() => setDropTarget(null)}
+      onDrop={(e) => {
+        e.preventDefault();
+        handleDropOnColumn(column, tab);
+      }}
+    >
       <p className="px-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
         {title}
         <span className="ml-1.5 font-normal normal-case">({items.length})</span>
       </p>
       {items.length > 0 ? (
-        <ul className="space-y-2">{items.map((task) => renderCard(task, done, tab))}</ul>
+        <ul className="space-y-2">{items.map((task) => renderCard(task, column === "done", tab))}</ul>
+      ) : (
+        <p className="px-1 py-6 text-sm text-muted-foreground">
+          {draggingTaskId ? t("daily.dropToComplete") : t("common.none")}
+        </p>
+      )}
+    </section>
+  );
+
+  const renderStaticColumn = (
+    title: string,
+    items: ApiTask[],
+    tab: BoardTab,
+    reopenDrop?: boolean,
+  ) => (
+    <section
+      className={cn(
+        "space-y-2 rounded-md p-1 transition-colors lg:min-h-0 lg:overflow-y-auto",
+        reopenDrop && dropTarget === "open" && draggingTaskId && "bg-indigo-50 ring-2 ring-indigo-200",
+      )}
+      onDragOver={
+        reopenDrop
+          ? (e) => {
+              e.preventDefault();
+              if (draggingTaskId) setDropTarget("open");
+            }
+          : undefined
+      }
+      onDragLeave={reopenDrop ? () => setDropTarget(null) : undefined}
+      onDrop={
+        reopenDrop
+          ? (e) => {
+              e.preventDefault();
+              handleDropOnColumn("open", tab);
+            }
+          : undefined
+      }
+    >
+      <p className="px-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+        {title}
+        <span className="ml-1.5 font-normal normal-case">({items.length})</span>
+      </p>
+      {items.length > 0 ? (
+        <ul className="space-y-2">{items.map((task) => renderCard(task, false, tab))}</ul>
       ) : (
         <p className="px-1 py-6 text-sm text-muted-foreground">{t("common.none")}</p>
       )}
@@ -342,6 +423,10 @@ export function DailyPersonBoard({
   const isGeneral = activeTab.kind === "general";
   const isTerminalTab = activeTab.kind === "paused" || activeTab.kind === "canceled";
   const canAdd = canAddOnTab(activeTab);
+  const hasBoardContent =
+    all.length > 0 ||
+    (isGeneral && done.length > 0) ||
+    (activeTab.kind === "person" && done.length > 0);
 
   return (
     <div className="flex h-full min-h-[400px] flex-col">
@@ -397,7 +482,9 @@ export function DailyPersonBoard({
             <p className="text-[11px] text-muted-foreground">
               {isTerminalTab
                 ? t("daily.closedTasks")
-                : `${open.length} ${t("daily.openSection").toLowerCase()}`}
+                : isGeneral
+                  ? t("daily.dragHintGeneral")
+                  : t("daily.dragHint")}
             </p>
           </div>
           {canAdd && (
@@ -413,7 +500,7 @@ export function DailyPersonBoard({
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto p-4 lg:overflow-hidden">
-          {all.length === 0 ? (
+          {!hasBoardContent ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <p className="text-sm text-muted-foreground">{t("board.noTasks")}</p>
               {canAdd && (
@@ -431,14 +518,15 @@ export function DailyPersonBoard({
           ) : isTerminalTab ? (
             <ul className="space-y-2">{all.map((task) => renderCard(task, false, activeTab))}</ul>
           ) : isGeneral ? (
-            <div className="grid gap-4 lg:h-full lg:min-h-0 lg:grid-cols-2">
-              {renderColumn(t("daily.inboxSection"), inbox, false, activeTab)}
-              {renderColumn(t("daily.collaborationsSection"), collab, false, activeTab)}
+            <div className="grid gap-4 lg:h-full lg:min-h-0 lg:grid-cols-3">
+              {renderStaticColumn(t("daily.inboxSection"), inbox, activeTab, true)}
+              {renderStaticColumn(t("daily.collaborationsSection"), collab, activeTab, true)}
+              {renderDropColumn(t("daily.completedSection"), done, "done", activeTab)}
             </div>
           ) : (
             <div className="grid gap-4 lg:h-full lg:min-h-0 lg:grid-cols-2">
-              {renderColumn(t("daily.openSection"), open, false, activeTab)}
-              {renderColumn(t("daily.completedSection"), done, true, activeTab)}
+              {renderDropColumn(t("daily.openSection"), open, "open", activeTab)}
+              {renderDropColumn(t("daily.completedSection"), done, "done", activeTab)}
             </div>
           )}
         </div>
