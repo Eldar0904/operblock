@@ -255,6 +255,17 @@
     "added": "Пікір қосылды",
     "deleted": "Пікір жойылды"
   },
+  "attachments": {
+    "title": "Тіркемелер",
+    "attach": "Тіркеу",
+    "uploading": "Жүктелуде…",
+    "empty": "Файлдар әлі жоқ",
+    "hint": "10 МБ дейін. PDF, суреттер, Office.",
+    "download": "Жүктеу",
+    "delete": "Жою",
+    "uploaded": "Файл тіркелді",
+    "deleted": "Файл жойылды"
+  },
   "goals": {
     "title": "Мақсаттар",
     "objectives": "Мақсаттар",

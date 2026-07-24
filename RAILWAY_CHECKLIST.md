@@ -32,8 +32,15 @@ Add these under the service → **Variables** (before or right after first deplo
 | `CLERK_PUBLISHABLE_KEY` | Local `.env` |
 | `VITE_CLERK_PUBLISHABLE_KEY` | Same as publishable key (needed at **build** time) |
 | `APP_URL` | Leave empty first deploy; then set `https://YOUR-SERVICE.up.railway.app` and redeploy |
+| `R2_ACCOUNT_ID` | Cloudflare account ID (`4adc57328c5c6bb48b3648613b7503a0`) |
+| `R2_ACCESS_KEY_ID` | R2 API token Access Key ID (Object Read & Write on `operblock-files`) |
+| `R2_SECRET_ACCESS_KEY` | R2 API token Secret Access Key |
+| `R2_BUCKET` | `operblock-files` |
+| `R2_ENDPOINT` | `https://4adc57328c5c6bb48b3648613b7503a0.r2.cloudflarestorage.com` |
 
 > Railway sets `PORT` automatically — do not hardcode it.
+
+> R2 vars are **server-only**. Never add them as `VITE_*`. Without them, task attachment upload returns 503.
 
 If you change `VITE_CLERK_PUBLISHABLE_KEY`, trigger a **Redeploy** so the frontend rebuilds.
 

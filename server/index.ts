@@ -12,6 +12,7 @@ import membersRouter from "./routes/members.js";
 import commentsRouter, { taskCommentsRouter } from "./routes/comments.js";
 import goalsRouter from "./routes/goals.js";
 import portfoliosRouter from "./routes/portfolios.js";
+import { attachmentsRouter, taskAttachmentsRouter } from "./routes/attachments.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const distPath = path.resolve(__dirname, "../dist");
@@ -41,6 +42,8 @@ if (clerkConfigured) {
   app.use("/api/projects", clerkAuth, projectsRouter);
   app.use("/api/tasks", clerkAuth, tasksRouter);
   app.use("/api/tasks/:taskId/comments", clerkAuth, taskCommentsRouter);
+  app.use("/api/tasks/:taskId/attachments", clerkAuth, taskAttachmentsRouter);
+  app.use("/api/attachments", clerkAuth, attachmentsRouter);
   app.use("/api/comments", clerkAuth, commentsRouter);
   app.use("/api/goals", clerkAuth, goalsRouter);
   app.use("/api/portfolios", clerkAuth, portfoliosRouter);
@@ -53,6 +56,8 @@ if (clerkConfigured) {
   app.use("/api/projects", projectsRouter);
   app.use("/api/tasks", tasksRouter);
   app.use("/api/tasks/:taskId/comments", taskCommentsRouter);
+  app.use("/api/tasks/:taskId/attachments", taskAttachmentsRouter);
+  app.use("/api/attachments", attachmentsRouter);
   app.use("/api/comments", commentsRouter);
   app.use("/api/goals", goalsRouter);
   app.use("/api/portfolios", portfoliosRouter);

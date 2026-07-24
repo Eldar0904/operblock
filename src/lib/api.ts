@@ -23,6 +23,16 @@ export interface ApiComment {
   createdAt: string;
 }
 
+export interface ApiAttachment {
+  id: string;
+  taskId: string;
+  fileName: string;
+  contentType: string | null;
+  sizeBytes: number;
+  uploadedByUserId: string | null;
+  createdAt: string;
+}
+
 export interface ApiGoal {
   id: string;
   title: string;
@@ -172,6 +182,61 @@ export const api = {
 
   deleteComment: (token: string | null, id: string) =>
     request<void>(`/comments/${id}`, { method: "DELETE" }, token),
+
+  getAttachments: (token: string | null, taskId: string) =>
+    request<ApiAttachment[]>(`/tasks/${taskId}/attachments`, {}, token),
+
+  uploadAttachment: async (token: string | null, taskId: string, file: File) => {
+    const headers: Record<string, string> = {};
+    if (token) headers.Authorization = `Bearer ${token}`;
+
+    const form = new FormData();
+    form.append("file", file);
+
+    const response = await fetch(`${API_BASE}/tasks/${taskId}/attachments`, {
+      method: "POST",
+      headers,
+      body: form,
+    });
+
+    if (!response.ok) {
+      const body = await response.text();
+      let message = body || response.statusText;
+      try {
+        const parsed = JSON.parse(body) as { error?: string };
+        if (parsed.error) message = parsed.error;
+      } catch {
+        /* keep raw body */
+      }
+      throw new ApiError(message, response.status);
+    }
+
+    return response.json() as Promise<ApiAttachment>;
+  },
+
+  downloadAttachment: async (token: string | null, id: string, fileName: string) => {
+    const headers: Record<string, string> = {};
+    if (token) headers.Authorization = `Bearer ${token}`;
+
+    const response = await fetch(`${API_BASE}/attachments/${id}/download`, { headers });
+    if (!response.ok) {
+      const body = await response.text();
+      throw new ApiError(body || response.statusText, response.status);
+    }
+
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = fileName;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+  },
+
+  deleteAttachment: (token: string | null, id: string) =>
+    request<void>(`/attachments/${id}`, { method: "DELETE" }, token),
 
   getGoals: (token: string | null) => request<ApiGoal[]>("/goals", {}, token),
 

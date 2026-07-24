@@ -57,6 +57,13 @@
       "when": 1722400000000,
       "tag": "0008_project_is_private",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1722500000000,
+      "tag": "0009_task_attachments",
+      "breakpoints": true
     }
   ]
 }

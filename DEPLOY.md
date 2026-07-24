@@ -40,8 +40,15 @@ Set these in Render → **Environment**:
 | `CLERK_PUBLISHABLE_KEY` | Clerk publishable key |
 | `VITE_CLERK_PUBLISHABLE_KEY` | **Same** publishable key (needed at build time) |
 | `APP_URL` | Your Render URL, e.g. `https://operblock.onrender.com` |
+| `R2_ACCOUNT_ID` | Cloudflare account ID |
+| `R2_ACCESS_KEY_ID` | R2 API token Access Key ID |
+| `R2_SECRET_ACCESS_KEY` | R2 API token Secret Access Key |
+| `R2_BUCKET` | `operblock-files` |
+| `R2_ENDPOINT` | `https://<ACCOUNT_ID>.r2.cloudflarestorage.com` |
 
 > **Important:** `VITE_CLERK_PUBLISHABLE_KEY` is baked into the frontend at build time. If you change it, trigger a **manual redeploy**.
+
+> R2 credentials are server-only (never `VITE_*`). Bucket stays private; downloads go through `/api/attachments/:id/download`.
 
 Set `APP_URL` **after** the first deploy when you know the Render URL, then redeploy once.
 
@@ -118,7 +125,7 @@ Same one-service layout. Config lives in [`railway.toml`](railway.toml). Step-by
 
 1. https://railway.com/new → **Deploy from GitHub repo** → `Eldar0904/operblock`
 2. **Settings → Networking → Generate Domain**
-3. Set the same environment variables as Render (`NODE_ENV`, `DATABASE_URL`, Clerk keys, `VITE_CLERK_PUBLISHABLE_KEY`)
+3. Set the same environment variables as Render (`NODE_ENV`, `DATABASE_URL`, Clerk keys, `VITE_CLERK_PUBLISHABLE_KEY`, and the five `R2_*` vars for attachments)
 4. After first deploy, set `APP_URL` to `https://YOUR-SERVICE.up.railway.app` and redeploy
 5. Add that URL to Clerk allowed redirects / paths
 6. Verify `https://YOUR-SERVICE.up.railway.app/api/health`
@@ -143,6 +150,7 @@ Same `build` + `start` commands work on **Fly.io** or any Node host. Set the sam
 ## Security checklist
 
 - [ ] `.env` is not committed (already in `.gitignore`)
-- [ ] Rotate Clerk/Neon keys if they were ever shared in chat
+- [ ] Rotate Clerk/Neon/R2 keys if they were ever shared in chat
 - [ ] Restrict Clerk sign-up to your team (domain allowlist or invites only)
 - [ ] Use `pk_live_` / `sk_live_` keys for production Clerk instance
+- [ ] Keep the R2 bucket private (no public access); downloads go through the API

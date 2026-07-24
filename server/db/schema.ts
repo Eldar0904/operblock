@@ -6,6 +6,7 @@ import {
   primaryKey,
   pgEnum,
   boolean,
+  integer,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
@@ -93,6 +94,19 @@ export const comments = pgTable("comments", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
+export const taskAttachments = pgTable("task_attachments", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  taskId: uuid("task_id")
+    .notNull()
+    .references(() => tasks.id, { onDelete: "cascade" }),
+  fileName: text("file_name").notNull(),
+  contentType: text("content_type"),
+  sizeBytes: integer("size_bytes").notNull(),
+  storageKey: text("storage_key").notNull(),
+  uploadedByUserId: text("uploaded_by_user_id"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
 export const goals = pgTable("goals", {
   id: uuid("id").primaryKey().defaultRandom(),
   title: text("title").notNull(),
@@ -147,6 +161,7 @@ export const tasksRelations = relations(tasks, ({ one, many }) => ({
   }),
   assignees: many(taskAssignees),
   comments: many(comments),
+  attachments: many(taskAttachments),
 }));
 
 export const taskAssigneesRelations = relations(taskAssignees, ({ one }) => ({
@@ -159,6 +174,13 @@ export const taskAssigneesRelations = relations(taskAssignees, ({ one }) => ({
 export const commentsRelations = relations(comments, ({ one }) => ({
   task: one(tasks, {
     fields: [comments.taskId],
+    references: [tasks.id],
+  }),
+}));
+
+export const taskAttachmentsRelations = relations(taskAttachments, ({ one }) => ({
+  task: one(tasks, {
+    fields: [taskAttachments.taskId],
     references: [tasks.id],
   }),
 }));
