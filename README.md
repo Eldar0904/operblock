@@ -1,215 +1,237 @@
 # OperBlock
 
-Internal project management tool — rebranded from the original Replit "Project Manager" template.
+**OperBlock** is PINE’s internal operations task tool — Daily work for the team, longer-term projects, goals, and lightweight reporting. Built for a small high-performance team (seat cap: 6 users).
+
+Repo: [Eldar0904/operblock](https://github.com/Eldar0904/operblock)
+
+---
+
+## What it does
+
+| Area | Behavior |
+|------|----------|
+| **Daily** | Shared board with **General** (Inbox + Collaborations), **person tabs**, **Paused** / **Canceled**. Complete by **drag-and-drop** Open ↔ Done. Own-tab rules: complete / edit / delete only where you’re allowed. |
+| **Projects** | Multi-project hub, portfolios in the sidebar, Kanban / list / timeline / overview. Optional **private** projects (creator-only contents). Creator manages pause/cancel/delete. |
+| **My Tasks** | Tasks assigned to you across Daily and projects. |
+| **Goals** | Objectives linked to projects; progress from completed tasks. |
+| **Reports** | Period analytics with Daily vs projects velocity split. |
+| **Attachments** | Files on tasks via **Cloudflare R2** (bytes) + **Neon** (metadata). Attach in the task modal, including while creating. |
+| **Auth** | **Clerk** (email / OAuth). RU / KK UI via i18n. |
+
+---
 
 ## Stack
 
-- **Frontend:** React 19, Vite 6, TypeScript, Tailwind CSS v4, React Router, TanStack Query, Clerk
-- **Backend:** Express 5, Drizzle ORM, PostgreSQL, Clerk JWT auth
-- **Design:** Inter font, shadcn-style HSL tokens, `REPLIT_APP_THEME_TOKENS` pattern
+| Layer | Tech |
+|-------|------|
+| Frontend | React 19, Vite 6, TypeScript, Tailwind CSS v4, React Router 7, TanStack Query, Clerk React, i18next |
+| Backend | Express 5, Drizzle ORM, `postgres`, Clerk Express JWT |
+| Data | **Neon** PostgreSQL (metadata & app data) |
+| Files | **Cloudflare R2** (S3-compatible), private bucket `operblock-files` |
+| Auth | **Clerk** |
+| Deploy | One Node service on **Railway** (or Render): migrate → build → `npm start` |
+
+---
+
+## Architecture
+
+```text
+Browser (Vite / React)
+    │  /api/*  (Clerk Bearer JWT)
+    ▼
+Express (server/index.ts)
+    ├── Neon  — projects, tasks, comments, goals, attachment rows
+    └── R2    — file bytes (tasks/<taskId>/<uuid>-name)
+```
+
+Production: Express also serves `dist/` (SPA). Locally: Vite on `:5173` proxies `/api` → Express `:3001`.
+
+---
+
+## Repository layout
+
+```text
+operblock/
+├── src/                    # React app
+│   ├── components/         # UI (Daily board, TaskModal, board, etc.)
+│   ├── pages/dashboard/    # Overview, Daily/Projects, Goals, Reports…
+│   ├── hooks/              # React Query + Clerk token helpers
+│   ├── i18n/               # ru / kk locales
+│   └── lib/                # api client, task helpers
+├── server/
+│   ├── index.ts            # Express app + static hosting
+│   ├── routes/             # projects, tasks, attachments, …
+│   ├── lib/                # task-service, r2, …
+│   ├── middleware/         # Clerk auth
+│   └── db/                 # Drizzle schema + migrations
+├── scripts/                # migrate, setup:check
+├── DEPLOY.md               # Production deploy notes
+├── RAILWAY_CHECKLIST.md    # Railway env & steps
+├── CHANGELOG.md            # Product change log
+└── .env.example            # All env vars (no secrets)
+```
+
+---
 
 ## Getting started
 
-### 1. Install dependencies
+### Requirements
+
+- Node.js **≥ 20**
+- Clerk application
+- PostgreSQL (Docker local, or Neon for cloud)
+- Optional locally: R2 credentials (attachments return 503 without them)
+
+### 1. Install
 
 ```bash
 npm install
 ```
 
-### 2. Configure environment
-
-Copy `.env.example` to `.env` and fill in your keys:
+### 2. Environment
 
 ```bash
 cp .env.example .env
 ```
 
-| Variable | Required for | Description |
-|----------|--------------|-------------|
-| `VITE_CLERK_PUBLISHABLE_KEY` | Auth (frontend) | Clerk publishable key |
-| `CLERK_SECRET_KEY` | Auth (API) | Clerk secret key for JWT verification |
-| `CLERK_PUBLISHABLE_KEY` | Auth (API) | Clerk publishable key (required by @clerk/express) |
-| `DATABASE_URL` | Live data | PostgreSQL connection string |
-| `APP_URL` | Redirects | Frontend URL (default `http://localhost:5173`) |
-| `PORT` | API server | Backend port (default `3001`) |
+| Variable | Where | Purpose |
+|----------|--------|---------|
+| `VITE_CLERK_PUBLISHABLE_KEY` | Frontend (build-time) | Clerk publishable key |
+| `CLERK_PUBLISHABLE_KEY` | Server | Same publishable key for `@clerk/express` |
+| `CLERK_SECRET_KEY` | Server | JWT verification |
+| `DATABASE_URL` | Server | Postgres / Neon connection string |
+| `APP_URL` | Server | CORS / app origin (e.g. `http://localhost:5173`) |
+| `PORT` | Server | Default `3001` (Railway sets this) |
+| `R2_ACCOUNT_ID` | Server | Cloudflare account id |
+| `R2_ACCESS_KEY_ID` | Server | R2 API token access key |
+| `R2_SECRET_ACCESS_KEY` | Server | R2 API token secret |
+| `R2_BUCKET` | Server | `operblock-files` |
+| `R2_ENDPOINT` | Server | `https://<ACCOUNT_ID>.r2.cloudflarestorage.com` (**no** bucket path suffix) |
 
-### 3. Clerk setup (free tier)
+Never expose R2 or Clerk secrets as `VITE_*`.
 
-#### Step 1 — Create a Clerk application
+### 3. Clerk
 
-1. Go to [dashboard.clerk.com](https://dashboard.clerk.com) and sign up (free, no credit card).
-2. Click **Create application**.
-3. Name it **OperBlock** (or anything you like).
-4. Choose sign-in methods — for an internal tool, **Email** + **Google** is a good default.
-5. Click **Create application**.
+1. Create an app at [dashboard.clerk.com](https://dashboard.clerk.com).
+2. Copy publishable + secret keys into `.env` (see table above).
+3. Paths: sign-in `/sign-in`, sign-up `/sign-up`, after sign-in/up → `/dashboard`.
+4. Allowed redirects: `http://localhost:5173` and the `/dashboard`, `/sign-in`, `/sign-up` variants.
+5. For production, add your Railway URL the same way.
+6. Optional: restrict sign-up (domain allowlist / invites). Team is capped at **6** users in-app.
 
-#### Step 2 — Copy API keys into `.env`
+### 4. Database
 
-In Clerk → **Configure** → **API keys**, copy:
-
-| Clerk dashboard | Your `.env` variable |
-|-----------------|----------------------|
-| Publishable key (`pk_test_...`) | `VITE_CLERK_PUBLISHABLE_KEY` |
-| Publishable key (same value) | `CLERK_PUBLISHABLE_KEY` |
-| Secret key (`sk_test_...`) | `CLERK_SECRET_KEY` |
-
-Your `.env` should look like:
-
-```env
-VITE_CLERK_PUBLISHABLE_KEY=pk_test_xxxxxxxx
-CLERK_SECRET_KEY=sk_test_xxxxxxxx
-CLERK_PUBLISHABLE_KEY=pk_test_xxxxxxxx
-```
-
-#### Step 3 — Configure redirect URLs
-
-In Clerk → **Configure** → **Paths** (or **URLs**):
-
-| Setting | Value |
-|---------|-------|
-| Sign-in URL | `/sign-in` |
-| Sign-up URL | `/sign-up` |
-| After sign-in URL | `/dashboard` |
-| After sign-up URL | `/dashboard` |
-
-In **Allowed redirect URLs**, add:
-
-```
-http://localhost:5173
-http://localhost:5173/dashboard
-http://localhost:5173/sign-in
-http://localhost:5173/sign-up
-```
-
-#### Step 4 — (Optional) Restrict to your team
-
-For an internal tool, in Clerk → **Configure** → **Restrictions**:
-
-- **Allowlist** an email domain (e.g. `@yourcompany.com`), or
-- Disable public sign-up and **invite users** from the Clerk dashboard.
-
-### 4. PostgreSQL setup
-
-#### Option A — Docker (recommended on Windows)
-
-Requires [Docker Desktop](https://www.docker.com/products/docker-desktop/).
+**Docker (local):**
 
 ```bash
-npm run db:up          # start PostgreSQL container
-npm run db:migrate     # create tables
-npm run db:seed        # insert sample org, project, and tasks
-```
-
-The default `DATABASE_URL` in `.env.example` matches the Docker container:
-
-```
-postgresql://operblock:operblock@localhost:5432/operblock
-```
-
-Copy that into your `.env` if you use Docker.
-
-#### Option B — Local PostgreSQL install
-
-If you have PostgreSQL installed natively:
-
-```bash
-createdb operblock
-```
-
-Then set `DATABASE_URL` in `.env` to your connection string and run:
-
-```bash
+npm run db:up
 npm run db:migrate
-npm run db:seed
+npm run db:seed   # optional sample data
 ```
 
-If PostgreSQL is not available, the frontend falls back to mock Kanban data and the API returns `503` for database routes.
+Default URL: `postgresql://operblock:operblock@localhost:5432/operblock`
 
-**Schema tables:** `organizations`, `projects`, `tasks`, `task_assignees`, `comments`
+**Neon (production / shared):** set `DATABASE_URL` to the Neon connection string, then `npm run db:migrate`.
 
-### 5. Verify setup
+### 5. R2 (attachments)
+
+1. Bucket `operblock-files` (private — no public access).
+2. **Manage R2 API Tokens** → Account API token → Object Read & Write on that bucket.
+3. Put the five `R2_*` vars in `.env` / Railway.
+
+### 6. Verify & run
 
 ```bash
 npm run setup:check
-```
-
-This confirms Clerk keys and PostgreSQL connectivity before you start the app.
-
-### 6. Run the full stack
-
-```bash
 npm run dev
 ```
 
-This starts both the Vite frontend (`http://localhost:5173`) and Express API (`http://localhost:3001`). Vite proxies `/api` requests to the backend.
+- App: http://localhost:5173  
+- API health: http://localhost:3001/api/health  
 
-Or run individually:
+---
 
-```bash
-npm run dev:client   # frontend only
-npm run dev:server   # backend only
-```
+## App routes
 
-## Routes
+| Path | Description | Auth |
+|------|-------------|------|
+| `/` | Landing (PINE / OperBlock) | Public |
+| `/sign-in`, `/sign-up` | Clerk | Public |
+| `/dashboard` | Momentum overview | Protected |
+| `/dashboard/daily` | Daily board | Protected |
+| `/dashboard/projects` | Projects hub | Protected |
+| `/dashboard/projects/:id` | Single project (board, list, …) | Protected |
+| `/dashboard/my-tasks` | Assigned to you | Protected |
+| `/dashboard/goals` | Goals | Protected |
+| `/dashboard/reports` | Reports | Protected |
+| `/dashboard/settings` | Settings | Protected |
 
-| Path | Page | Auth |
-|------|------|------|
-| `/` | Landing — OperBlock overview | Public |
-| `/sign-in` | Clerk sign-in | Public |
-| `/sign-up` | Clerk sign-up | Public |
-| `/dashboard` | Kanban board (API + mock fallback) | Protected |
+---
 
-## API
+## API (overview)
 
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/api/health` | Health check + DB status |
-| GET/POST | `/api/projects` | List / create projects |
-| PATCH/DELETE | `/api/projects/:id` | Update / delete project |
-| GET/POST | `/api/tasks` | List / create tasks |
-| PATCH/DELETE | `/api/tasks/:id` | Update / delete task (status via PATCH) |
-| GET | `/api/reports/summary?period=week\|month\|quarter\|year` | Period analytics (completions, throughput, breakdowns) |
+All mutating/data routes expect `Authorization: Bearer <Clerk JWT>` when Clerk is configured.
 
-All `/api/projects` and `/api/tasks` routes require a valid Clerk JWT (`Authorization: Bearer <token>`).
+| Area | Endpoints (prefix `/api`) |
+|------|---------------------------|
+| Health | `GET /health` |
+| Projects | `GET/POST /projects`, `GET /projects/daily`, `GET /projects/all`, `PATCH/DELETE /projects/:id` |
+| Tasks | `GET/POST /tasks`, `PATCH/DELETE /tasks/:id` |
+| Comments | `GET/POST /tasks/:taskId/comments`, `DELETE /comments/:id` |
+| Attachments | `GET/POST /tasks/:taskId/attachments`, `GET /attachments/:id/download`, `DELETE /attachments/:id` |
+| Portfolios | CRUD under `/portfolios` |
+| Goals | CRUD under `/goals` |
+| Members | `GET /members` (list + seat capacity) |
+| Reports | `GET /reports/summary?period=…` |
 
-## Deploy
+---
 
-See **[DEPLOY.md](DEPLOY.md)** for production deploy with Neon + Clerk.
+## Permissions (product rules)
 
-- **Render:** [`RENDER_CHECKLIST.md`](RENDER_CHECKLIST.md) + `render.yaml`
-- **Railway:** [`RAILWAY_CHECKLIST.md`](RAILWAY_CHECKLIST.md) + `railway.toml`
+- **Daily — person tab:** only that person (you on your tab) can complete / edit / delete those tasks.
+- **Daily — General:** inbox (unassigned) editable by team; collaborations by participants.
+- **Projects:** team can work tasks unless **private** — then only the creator opens/edits contents; creator also owns project pause/cancel/delete/privacy toggle.
+- **Attachments:** same view/mutate rules as the parent task.
 
-Quick summary: one web service runs migrate + build, then `npm start`. Set `APP_URL` and Clerk redirect URLs to your live domain.
-
-## Theme
-
-CSS variables live in `src/index.css` (`:root` / `.dark`).  
-`index.html` defines `window.REPLIT_APP_THEME_TOKENS` for Tailwind v4 color/font/radius mapping.
-
-Font: **Inter** (400, 500, 600, 700) via Google Fonts.
+---
 
 ## Scripts
 
 | Command | Description |
 |---------|-------------|
-| `npm run dev` | Start frontend + backend concurrently |
-| `npm run dev:client` | Start Vite dev server only |
-| `npm run dev:server` | Start Express API only |
-| `npm run build` | Type-check and production build |
-| `npm start` | Run production server (API + static frontend) |
-| `npm run preview` | Preview production build |
-| `npm run db:generate` | Generate Drizzle migrations from schema |
-| `npm run db:migrate` | Apply Drizzle migrations |
-| `npm run db:seed` | Insert sample org, project, and tasks |
-| `npm run db:push` | Push schema directly to DB (dev) |
-| `npm run db:studio` | Open Drizzle Studio |
-| `npm run db:up` | Start PostgreSQL via Docker |
-| `npm run db:down` | Stop PostgreSQL container |
-| `npm run setup:check` | Verify Clerk keys and DB connection |
+| `npm run dev` | Client + server |
+| `npm run build` | `tsc` + Vite production build |
+| `npm start` | Production server (API + static) |
+| `npm run db:migrate` | Apply Drizzle SQL migrations |
+| `npm run db:seed` | Sample data |
+| `npm run db:studio` | Drizzle Studio |
+| `npm run db:up` / `db:down` | Docker Postgres |
+| `npm run setup:check` | Clerk + DB sanity check |
 
-## Dev without backend services
+---
 
-The dashboard works without PostgreSQL:
+## Deploy (Railway)
 
-- **No DB:** Kanban shows mock data; drag-and-drop updates UI optimistically but PATCH calls fail silently (reverts on error).
-- **No Clerk:** Auth routes won't work until `VITE_CLERK_PUBLISHABLE_KEY` is set.
+See **[RAILWAY_CHECKLIST.md](RAILWAY_CHECKLIST.md)** and **[DEPLOY.md](DEPLOY.md)**.
+
+1. Connect GitHub `main`; Railway runs migrate + build from `railway.toml`.
+2. Set: `NODE_ENV`, `DATABASE_URL`, Clerk keys, `VITE_CLERK_PUBLISHABLE_KEY`, `APP_URL`, and all five `R2_*`.
+3. Generate domain → set `APP_URL` → add Clerk redirects → redeploy.
+4. Check `/api/health` → `"ok": true`, `"db": true`, `"clerk": true`.
+
+Render is also supported via `render.yaml` / `RENDER_CHECKLIST.md`.
+
+---
+
+## Related docs
+
+- **[CHANGELOG.md](CHANGELOG.md)** — dated log of product changes  
+- **[DEPLOY.md](DEPLOY.md)** — production deploy detail  
+- **[RAILWAY_CHECKLIST.md](RAILWAY_CHECKLIST.md)** — Railway variables & steps  
+- **[.env.example](.env.example)** — env template  
+
+---
+
+## License / audience
+
+Internal tool for **PINE**. Not published as a public SaaS product.
