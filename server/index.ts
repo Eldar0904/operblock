@@ -13,6 +13,7 @@ import commentsRouter, { taskCommentsRouter } from "./routes/comments.js";
 import goalsRouter from "./routes/goals.js";
 import portfoliosRouter from "./routes/portfolios.js";
 import { attachmentsRouter, taskAttachmentsRouter } from "./routes/attachments.js";
+import pineappleIntegrationRouter from "./routes/pineapple-integration.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const distPath = path.resolve(__dirname, "../dist");
@@ -32,6 +33,10 @@ app.use(
 );
 
 app.use(express.json());
+
+// Server-to-server read-only export for Pineapple. This endpoint uses its own
+// integration token and must remain outside the browser-facing Clerk routes.
+app.use("/api/integrations/pineapple", pineappleIntegrationRouter);
 
 app.get("/api/health", async (_req, res) => {
   const db = await checkDbConnection();
