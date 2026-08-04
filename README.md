@@ -1,5 +1,34 @@
 # OperBlock
 
+## AI assistant (Nous Portal + StepFun)
+
+The dashboard includes a server-backed project-management copilot. Provider
+credentials never reach the browser.
+
+For local development with a Nous Portal account:
+
+1. Install Hermes Agent and run `hermes portal` to sign in.
+2. Start the OpenAI-compatible subscription proxy with `hermes proxy start`.
+3. Copy the `AI_*` settings from `.env.example` into `.env`.
+4. Start OperBlock with `npm run dev`.
+
+The default model is `stepfun/step-3.7-flash:free`. If the model list in your Nous
+Portal uses another StepFun slug, set `AI_MODEL` to that exact value. For a
+hosted deployment, set `AI_BASE_URL`, `AI_API_KEY`, and `AI_MODEL` on the host;
+do not expose them as `VITE_*` variables.
+
+Opero reads projects and tasks the signed-in user is authorized to see. It can
+propose creating, editing, assigning, completing, or deleting projects and
+tasks; every mutation is shown for confirmation and revalidated by the server.
+Conversation history is stored per Clerk user. Run `npm run db:migrate` after
+deploying this version to create the Opero conversation tables.
+
+Each user has a separate Opero history and Opero uses that user's Clerk identity
+for every request. New tasks and projects record their creator; only that creator
+can edit or delete them through either the normal UI/API or Opero. Other users
+may still read non-private workspace records but cannot mutate records they do
+not own.
+
 **OperBlock** is PINE’s internal operations task tool — Daily work for the team, longer-term projects, goals, and lightweight reporting. Built for a small high-performance team (seat cap: 6 users).
 
 Repo: [Eldar0904/operblock](https://github.com/Eldar0904/operblock)

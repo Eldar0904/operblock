@@ -46,6 +46,30 @@ export interface ApiGoal {
   progressPercent: number;
 }
 
+export interface AiChatMessage {
+  id: string;
+  conversationId: string;
+  role: "user" | "assistant";
+  content: string;
+  actions: AiAction[];
+  createdAt: string;
+}
+
+export interface AiAction {
+  type: string;
+  label: string;
+  data: Record<string, unknown>;
+  status?: "pending" | "completed" | "failed";
+}
+
+export interface AiConversation {
+  id: string;
+  userId: string;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 const API_BASE = import.meta.env.VITE_API_URL ?? "/api";
 
 export class ApiError extends Error {
@@ -91,6 +115,32 @@ async function request<T>(
 
 export const api = {
   health: () => request<{ ok: boolean; db: boolean }>("/health"),
+
+  getAiConversations: (token: string | null) =>
+    request<AiConversation[]>("/ai/conversations", {}, token),
+
+  createAiConversation: (token: string | null) =>
+    request<AiConversation>("/ai/conversations", { method: "POST" }, token),
+
+  deleteAiConversation: (token: string | null, id: string) =>
+    request<void>(`/ai/conversations/${id}`, { method: "DELETE" }, token),
+
+  getAiMessages: (token: string | null, conversationId: string) =>
+    request<AiChatMessage[]>(`/ai/conversations/${conversationId}/messages`, {}, token),
+
+  sendAiMessage: (token: string | null, conversationId: string, content: string) =>
+    request<{ userMessage: AiChatMessage; assistantMessage: AiChatMessage }>(
+      `/ai/conversations/${conversationId}/messages`,
+      { method: "POST", body: JSON.stringify({ content }) },
+      token,
+    ),
+
+  executeAiAction: (token: string | null, messageId: string, actionIndex: number) =>
+    request<{ action: AiAction; result: unknown }>(
+      `/ai/messages/${messageId}/actions/${actionIndex}/execute`,
+      { method: "POST" },
+      token,
+    ),
 
   getProjects: (token: string | null) =>
     request<ApiProject[]>("/projects", {}, token),

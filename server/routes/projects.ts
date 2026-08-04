@@ -213,10 +213,7 @@ router.patch("/:id", async (req, res) => {
     }
 
     const userId = getClerkUserId(req);
-    if (
-      existing.createdByUserId &&
-      (!userId || existing.createdByUserId !== userId)
-    ) {
+    if (!userId || existing.createdByUserId !== userId) {
       return res.status(403).json({ error: "Only the project creator can edit this project" });
     }
 
@@ -293,10 +290,7 @@ router.delete("/:id", async (req, res) => {
     }
 
     const userId = getClerkUserId(req);
-    if (
-      existing.createdByUserId &&
-      (!userId || existing.createdByUserId !== userId)
-    ) {
+    if (!userId || existing.createdByUserId !== userId) {
       return res.status(403).json({ error: "Only the project creator can delete this project" });
     }
 

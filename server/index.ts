@@ -14,6 +14,7 @@ import goalsRouter from "./routes/goals.js";
 import portfoliosRouter from "./routes/portfolios.js";
 import { attachmentsRouter, taskAttachmentsRouter } from "./routes/attachments.js";
 import pineappleIntegrationRouter from "./routes/pineapple-integration.js";
+import aiRouter from "./routes/ai.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const distPath = path.resolve(__dirname, "../dist");
@@ -54,6 +55,7 @@ if (clerkConfigured) {
   app.use("/api/portfolios", clerkAuth, portfoliosRouter);
   app.use("/api/reports", clerkAuth, reportsRouter);
   app.use("/api/members", clerkAuth, membersRouter);
+  app.use("/api/ai", clerkAuth, aiRouter);
 } else {
   console.warn(
     "CLERK_SECRET_KEY / CLERK_PUBLISHABLE_KEY not set — API auth disabled (dev only).",
@@ -68,6 +70,7 @@ if (clerkConfigured) {
   app.use("/api/portfolios", portfoliosRouter);
   app.use("/api/reports", reportsRouter);
   app.use("/api/members", membersRouter);
+  app.use("/api/ai", aiRouter);
 }
 
 if (isProduction) {

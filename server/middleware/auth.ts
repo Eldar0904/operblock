@@ -22,6 +22,8 @@ export function requireClerkAuth(req: Request, res: Response, next: NextFunction
 }
 
 export function getClerkUserId(req: Request): string | null {
+  const configured = Boolean(process.env.CLERK_SECRET_KEY && process.env.CLERK_PUBLISHABLE_KEY);
+  if (!configured) return "development-user";
   const auth = getAuth(req);
   return auth.userId ?? null;
 }

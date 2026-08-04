@@ -17,6 +17,7 @@ export interface TaskDto {
   dueDate: string | null;
   assigneeUserId: string | null;
   assigneeUserIds: string[];
+  createdByUserId: string | null;
   createdAt: string;
   completedAt: string | null;
 }
@@ -61,6 +62,7 @@ export function serializeTask(
     dueDate: row.dueDate ? row.dueDate.toISOString() : null,
     assigneeUserId: ids[0] ?? null,
     assigneeUserIds: ids,
+    createdByUserId: row.createdByUserId,
     createdAt: row.createdAt.toISOString(),
     completedAt: row.completedAt ? row.completedAt.toISOString() : null,
   };

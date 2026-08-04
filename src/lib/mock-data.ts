@@ -19,6 +19,7 @@ export interface ApiTask {
   dueDate?: string | null;
   assigneeUserId?: string | null;
   assigneeUserIds?: string[];
+  createdByUserId?: string | null;
   createdAt?: string;
   completedAt?: string | null;
   tag?: string;

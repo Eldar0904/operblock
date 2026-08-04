@@ -24,7 +24,6 @@ function canViewProjectContents(
 ): boolean {
   if (project.isPersonal) return true;
   if (!project.isPrivate) return true;
-  if (!project.createdByUserId) return true;
   return Boolean(userId && project.createdByUserId === userId);
 }
 
@@ -144,6 +143,7 @@ router.post("/", async (req, res) => {
         priority: (priority ?? null) as typeof schema.tasks.$inferInsert.priority,
         dueDate: parsedDue,
         assigneeUserId: participantIds[0] ?? null,
+        createdByUserId: userId,
         completedAt: initialCompletedAtForStatus(nextStatus),
       })
       .returning();
@@ -205,6 +205,9 @@ router.patch("/:id", async (req, res) => {
     }
 
     const currentAssignees = await getAssigneeIdsForTask(db, req.params.id);
+    if (!userId || ctx.task.createdByUserId !== userId) {
+      return res.status(403).json({ error: "Only the task creator can edit this task" });
+    }
     if (ctx.project.isPersonal && !canMutateDailyTask(userId, currentAssignees)) {
       return res.status(403).json({ error: "You can only edit tasks on your own Daily tab" });
     }
@@ -268,6 +271,9 @@ router.delete("/:id", async (req, res) => {
     }
 
     const assignees = await getAssigneeIdsForTask(db, req.params.id);
+    if (!userId || ctx.task.createdByUserId !== userId) {
+      return res.status(403).json({ error: "Only the task creator can delete this task" });
+    }
     if (ctx.project.isPersonal && !canMutateDailyTask(userId, assignees)) {
       return res.status(403).json({ error: "You can only delete tasks on your own Daily tab" });
     }

@@ -38,6 +38,7 @@ import { ApiError } from "@/lib/api";
 import type { ApiPortfolio, ApiProject } from "@/lib/mock-data";
 import { canAccessProjectContents } from "@/lib/project-access";
 import { useToast } from "@/components/ui/toast";
+import AIAssistant from "@/components/dashboard/AIAssistant";
 
 const ACTIVE_PROJECT_KEY = "operblock-active-project";
 const COLLAPSED_PORTFOLIOS_KEY = "operblock-collapsed-portfolios";
@@ -660,6 +661,7 @@ export default function DashboardLayout() {
       <div className="flex min-w-0 flex-1 flex-col">
         <Outlet context={{ activeProject }} />
       </div>
+      <AIAssistant />
     </div>
   );
 }

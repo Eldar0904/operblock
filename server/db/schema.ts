@@ -7,6 +7,7 @@ import {
   pgEnum,
   boolean,
   integer,
+  jsonb,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
@@ -69,6 +70,7 @@ export const tasks = pgTable("tasks", {
   priority: taskPriorityEnum("priority"),
   dueDate: timestamp("due_date", { withTimezone: true }),
   assigneeUserId: text("assignee_user_id"),
+  createdByUserId: text("created_by_user_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   completedAt: timestamp("completed_at", { withTimezone: true }),
 });
@@ -104,6 +106,25 @@ export const taskAttachments = pgTable("task_attachments", {
   sizeBytes: integer("size_bytes").notNull(),
   storageKey: text("storage_key").notNull(),
   uploadedByUserId: text("uploaded_by_user_id"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const aiConversations = pgTable("ai_conversations", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id").notNull(),
+  title: text("title").notNull().default("New conversation"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const aiMessages = pgTable("ai_messages", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  conversationId: uuid("conversation_id")
+    .notNull()
+    .references(() => aiConversations.id, { onDelete: "cascade" }),
+  role: text("role").notNull(),
+  content: text("content").notNull(),
+  actions: jsonb("actions").$type<Record<string, unknown>[]>().notNull().default([]),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
