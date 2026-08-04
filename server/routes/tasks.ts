@@ -43,6 +43,7 @@ router.get("/", async (req, res) => {
   }
 
   const projectId = req.query.projectId as string | undefined;
+  const mineOnly = req.query.mine === "true";
   const userId = getClerkUserId(req);
 
   try {
@@ -61,7 +62,11 @@ router.get("/", async (req, res) => {
         return res.status(403).json({ error: "This project is private" });
       }
       const rows = await db.select().from(schema.tasks).where(eq(schema.tasks.projectId, projectId));
-      return res.json(await enrichTasks(db, rows));
+      if (!mineOnly) return res.json(await enrichTasks(db, rows));
+      if (!userId) return res.status(401).json({ error: "Unauthorized" });
+      const assigneeMap = await loadAssigneesByTaskIds(db, rows.map((row) => row.id));
+      const mine = rows.filter((row) => (assigneeMap.get(row.id) ?? (row.assigneeUserId ? [row.assigneeUserId] : [])).includes(userId));
+      return res.json(await enrichTasks(db, mine));
     }
 
     const allProjects = await db.select().from(schema.projects);
@@ -69,7 +74,12 @@ router.get("/", async (req, res) => {
       allProjects.filter((p) => canViewProjectContents(p, userId)).map((p) => p.id),
     );
     const allTasks = await db.select().from(schema.tasks);
-    const rows = allTasks.filter((task) => visibleProjectIds.has(task.projectId));
+    let rows = allTasks.filter((task) => visibleProjectIds.has(task.projectId));
+    if (mineOnly) {
+      if (!userId) return res.status(401).json({ error: "Unauthorized" });
+      const assigneeMap = await loadAssigneesByTaskIds(db, rows.map((row) => row.id));
+      rows = rows.filter((row) => (assigneeMap.get(row.id) ?? (row.assigneeUserId ? [row.assigneeUserId] : [])).includes(userId));
+    }
     res.json(await enrichTasks(db, rows));
   } catch (err) {
     console.error("GET /tasks error:", err);
