@@ -76,6 +76,8 @@ async function workspaceContext(db: ReturnType<typeof getDb>, userId: string) {
       status: project.status,
       private: project.isPrivate,
       editable: canEditProject(project, userId),
+      canCreateTasks: true,
+      isDaily: project.isPersonal,
     })),
     tasks: tasks.slice(0, 500).map((task) => ({
       id: task.id,
@@ -95,7 +97,9 @@ async function workspaceContext(db: ReturnType<typeof getDb>, userId: string) {
 const SYSTEM_PROMPT = `You are Opero, OperBlock's project-management assistant.
 You receive the user's authorized workspace snapshot. Answer using that data and mention project/task names precisely.
 You may propose actions, but they are never executed without user confirmation.
-Only propose updates or deletions for records whose editable field is true. The user may read other visible records but does not own them.
+For project update/delete actions, require that project's editable field to be true.
+For task update/delete actions, require that task's editable field to be true.
+Task creation is a separate permission: it is allowed whenever the target project's canCreateTasks field is true, even if that project has editable:false. In particular, the shared Daily project cannot itself be edited, but the user can create their own tasks inside it.
 Return ONLY valid JSON with this shape: {"reply":"helpful response","actions":[]}.
 Allowed action types: create_project, update_project, delete_project, create_task, update_task, delete_task.
 Each action is {"type":"...","label":"clear human summary","data":{...}}.
@@ -283,7 +287,8 @@ async function executeAction(db: ReturnType<typeof getDb>, action: OperoAction, 
     const [project] = await db.select().from(schema.projects).where(eq(schema.projects.id, projectId)).limit(1);
     if (!project || !canViewProject(project, userId)) throw new Error("Project not found or unavailable");
     if (!title) throw new Error("Task title is required");
-    const assigneeUserIds = Array.isArray(data.assigneeUserIds) ? data.assigneeUserIds.filter((id): id is string => typeof id === "string") : [];
+    let assigneeUserIds = Array.isArray(data.assigneeUserIds) ? data.assigneeUserIds.filter((id): id is string => typeof id === "string") : [];
+    if (project.isPersonal && assigneeUserIds.length === 0) assigneeUserIds = [userId];
     if (project.isPersonal && !canMutateDailyTask(userId, assigneeUserIds)) throw new Error("Daily task permissions do not allow this assignment");
     const status = typeof data.status === "string" && TASK_STATUSES.has(data.status) ? data.status : "todo";
     const priority = typeof data.priority === "string" && PRIORITIES.has(data.priority) ? data.priority : null;
