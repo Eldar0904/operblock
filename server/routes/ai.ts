@@ -169,32 +169,71 @@ router.post("/conversations/:id/messages", async (req, res) => {
   const context = await workspaceContext(db, userId);
   const baseUrl = (process.env.AI_BASE_URL ?? "http://127.0.0.1:8645/v1").replace(/\/$/, "");
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 60_000);
+  const timeout = setTimeout(() => controller.abort(), 90_000);
 
   try {
-    const providerResponse = await fetch(`${baseUrl}/chat/completions`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${process.env.AI_API_KEY ?? "unused-proxy-attaches-real-creds"}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
+    const providerMessages = [
+      { role: "system", content: SYSTEM_PROMPT },
+      { role: "system", content: `Reply in ${language}. Write action labels in ${language} too.` },
+      { role: "system", content: `Authorized workspace snapshot:\n${JSON.stringify(context)}` },
+      ...history.reverse().map((message) => ({ role: message.role, content: message.content })),
+    ];
+    type ProviderBody = {
+      id?: string;
+      choices?: {
+        finish_reason?: string | null;
+        message?: { content?: string | { text?: string }[] | null; reasoning?: string; reasoning_content?: string };
+      }[];
+      error?: { message?: string };
+    };
+    const callProvider = async (maxTokens: number, retry = false) => {
+      const response = await fetch(`${baseUrl}/chat/completions`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${process.env.AI_API_KEY ?? "unused-proxy-attaches-real-creds"}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
         model: process.env.AI_MODEL ?? "stepfun/step-3.7-flash:free",
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          { role: "system", content: `Reply in ${language}. Write action labels in ${language} too.` },
-          { role: "system", content: `Authorized workspace snapshot:\n${JSON.stringify(context)}` },
-          ...history.reverse().map((message) => ({ role: message.role, content: message.content })),
-        ],
+        messages: retry
+          ? [...providerMessages, { role: "system", content: "Return the final JSON response now. Keep reasoning brief and ensure reply is non-empty." }]
+          : providerMessages,
         temperature: 0.2,
-        max_tokens: 1_500,
-      }),
-      signal: controller.signal,
-    });
-    const body = await providerResponse.json().catch(() => null) as { choices?: { message?: { content?: string } }[]; error?: { message?: string } } | null;
-    if (!providerResponse.ok) {
-      console.error("Opero provider error", providerResponse.status, body?.error?.message);
-      return res.status(502).json({ error: providerResponse.status === 401 ? "AI authentication failed. Reconnect the Nous Portal proxy." : "Opero could not complete the request." });
+        max_tokens: maxTokens,
+        reasoning: { effort: "low", exclude: true },
+        }),
+        signal: controller.signal,
+      });
+      const body = await response.json().catch(() => null) as ProviderBody | null;
+      return { response, body };
+    };
+    const extractContent = (body: ProviderBody | null) => {
+      const contentValue = body?.choices?.[0]?.message?.content;
+      if (typeof contentValue === "string") return contentValue.trim();
+      if (Array.isArray(contentValue)) return contentValue.map((part) => part?.text ?? "").join("").trim();
+      return "";
+    };
+
+    let providerResult = await callProvider(3_000);
+    if (!providerResult.response.ok) {
+      console.error("Opero provider error", providerResult.response.status, providerResult.body?.error?.message);
+      return res.status(502).json({ error: providerResult.response.status === 401 ? "AI authentication failed. Check the Nous API key." : "Opero could not complete the request." });
     }
-    const raw = body?.choices?.[0]?.message?.content?.trim();
-    if (!raw) return res.status(502).json({ error: "Opero returned an empty response." });
+    let raw = extractContent(providerResult.body);
+    if (!raw) {
+      console.warn("Opero received empty content; retrying", {
+        traceId: providerResult.body?.id,
+        finishReason: providerResult.body?.choices?.[0]?.finish_reason,
+        hadReasoning: Boolean(providerResult.body?.choices?.[0]?.message?.reasoning || providerResult.body?.choices?.[0]?.message?.reasoning_content),
+      });
+      providerResult = await callProvider(4_000, true);
+      if (!providerResult.response.ok) {
+        console.error("Opero retry error", providerResult.response.status, providerResult.body?.error?.message);
+        return res.status(502).json({ error: "Opero could not complete the request." });
+      }
+      raw = extractContent(providerResult.body);
+    }
+    if (!raw) {
+      console.error("Opero retry returned empty content", { traceId: providerResult.body?.id, finishReason: providerResult.body?.choices?.[0]?.finish_reason });
+      return res.status(502).json({ error: "Opero could not generate a final answer. Please try again." });
+    }
     const parsed = parseModelResponse(raw);
     const [assistantMessage] = await db.insert(schema.aiMessages).values({ conversationId: conversation.id, role: "assistant", content: parsed.reply, actions: parsed.actions }).returning();
     const title = conversation.title === "New conversation" ? content.slice(0, 60) : conversation.title;
@@ -202,7 +241,7 @@ router.post("/conversations/:id/messages", async (req, res) => {
     res.json({ userMessage, assistantMessage });
   } catch (error) {
     console.error("Opero request failed", error);
-    res.status(502).json({ error: error instanceof Error && error.name === "AbortError" ? "Opero timed out. Please try again." : "Cannot reach Opero. Make sure the Hermes proxy is running." });
+    res.status(502).json({ error: error instanceof Error && error.name === "AbortError" ? "Opero timed out. Please try again." : "Cannot reach the AI provider." });
   } finally {
     clearTimeout(timeout);
   }
