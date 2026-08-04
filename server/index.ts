@@ -25,10 +25,23 @@ const PORT = Number(process.env.PORT) || 3001;
 const clerkConfigured = Boolean(
   process.env.CLERK_SECRET_KEY && process.env.CLERK_PUBLISHABLE_KEY,
 );
+const allowedCorsOrigins = [
+  process.env.APP_URL ?? "http://localhost:5173",
+  ...(process.env.CORS_ORIGINS ?? "")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean),
+];
 
 app.use(
   cors({
-    origin: process.env.APP_URL ?? "http://localhost:5173",
+    origin: (origin, callback) => {
+      if (!origin || allowedCorsOrigins.includes(origin)) {
+        callback(null, true);
+        return;
+      }
+      callback(new Error("Origin is not allowed by OperBlock CORS"));
+    },
     credentials: true,
   }),
 );
