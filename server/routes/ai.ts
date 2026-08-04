@@ -155,6 +155,7 @@ router.get("/conversations/:id/messages", async (req, res) => {
 router.post("/conversations/:id/messages", async (req, res) => {
   if (!isDbConfigured()) return res.status(503).json({ error: "Database not configured" });
   const content = typeof req.body?.content === "string" ? req.body.content.trim().slice(0, 8_000) : "";
+  const language = req.body?.language === "kk" ? "Kazakh" : req.body?.language === "en" ? "English" : "Russian";
   if (!content) return res.status(400).json({ error: "Message is required" });
 
   const db = getDb();
@@ -178,6 +179,7 @@ router.post("/conversations/:id/messages", async (req, res) => {
         model: process.env.AI_MODEL ?? "stepfun/step-3.7-flash:free",
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
+          { role: "system", content: `Reply in ${language}. Write action labels in ${language} too.` },
           { role: "system", content: `Authorized workspace snapshot:\n${JSON.stringify(context)}` },
           ...history.reverse().map((message) => ({ role: message.role, content: message.content })),
         ],

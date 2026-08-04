@@ -379,6 +379,27 @@
     "ux": "UX",
     "security": "Безопасность"
   },
+  "opero": {
+    "agent": "Ваш агент OperBlock",
+    "history": "История диалогов",
+    "back": "Назад",
+    "close": "Закрыть Opero",
+    "open": "Открыть Opero",
+    "newConversation": "Новый диалог",
+    "deleteConversation": "Удалить этот диалог с Opero?",
+    "delete": "Удалить диалог",
+    "askTitle": "Спросите Opero о рабочем пространстве",
+    "askDescription": "Opero видит доступные вам проекты и может предложить изменения на подтверждение.",
+    "starterOverdue": "Какие задачи просрочены?",
+    "starterRisks": "Какие проекты находятся под угрозой?",
+    "starterPriorities": "Помоги расставить приоритеты на сегодня",
+    "placeholder": "Спросите Opero или запросите изменение...",
+    "disclaimer": "Opero запрашивает подтверждение перед изменением данных.",
+    "unavailable": "Opero сейчас недоступен.",
+    "confirmAction": "Разрешить Opero выполнить действие: {{action}}?",
+    "reviewApply": "Проверить и применить",
+    "applied": "Применено"
+  },
   "previewTasks": {
     "designAudit": "Аудит дизайн-системы",
     "updateCopy": "Обновить текст лендинга",

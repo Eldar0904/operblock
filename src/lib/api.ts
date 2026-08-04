@@ -128,10 +128,10 @@ export const api = {
   getAiMessages: (token: string | null, conversationId: string) =>
     request<AiChatMessage[]>(`/ai/conversations/${conversationId}/messages`, {}, token),
 
-  sendAiMessage: (token: string | null, conversationId: string, content: string) =>
+  sendAiMessage: (token: string | null, conversationId: string, content: string, language: string) =>
     request<{ userMessage: AiChatMessage; assistantMessage: AiChatMessage }>(
       `/ai/conversations/${conversationId}/messages`,
-      { method: "POST", body: JSON.stringify({ content }) },
+      { method: "POST", body: JSON.stringify({ content, language }) },
       token,
     ),
 
