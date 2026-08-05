@@ -36,20 +36,22 @@ export function BoardView({
   }));
 
   return (
-    <div className="flex h-full gap-4">
+    <div className="grid h-full min-w-[980px] grid-cols-4 gap-4">
       {columns.map((column) => (
-        <div key={column.id} className="flex w-72 shrink-0 flex-col">
-          <div className="mb-3 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <h2 className="text-sm font-semibold text-foreground">{column.title}</h2>
-              <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+        <div key={column.id} className="flex min-w-0 flex-col">
+          <div className="group mb-3 flex min-h-9 items-center justify-between rounded-md bg-muted/60 px-2.5 py-1.5 transition-colors hover:bg-muted">
+            <div className="flex min-w-0 items-center gap-2">
+              <h2 className="truncate text-sm font-semibold text-foreground">{column.title}</h2>
+              <span className="shrink-0 rounded-full bg-background px-2 py-0.5 text-xs text-muted-foreground shadow-sm">
                 {column.tasks.length}
               </span>
             </div>
             <button
+              type="button"
               onClick={() => onAddToColumn(column.id)}
-              className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+              className="ml-2 shrink-0 rounded p-1 text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
               title={t("projects.addTask")}
+              aria-label={`${t("projects.addTask")}: ${column.title}`}
             >
               <Plus className="h-4 w-4" />
             </button>
