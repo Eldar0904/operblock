@@ -79,11 +79,7 @@ export default function OverviewPage() {
 
   return (
     <>
-      <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-background px-6">
-        <div>
-          <p className="text-xs text-muted-foreground">{t("overview.dashboard")}</p>
-          <h1 className="text-base font-semibold">{t(`overview.greeting.${period}`, { name })}</h1>
-        </div>
+      <header className="flex h-14 shrink-0 items-center justify-end border-b border-border bg-background px-6">
         <div className="flex items-center gap-3">
           <NotificationsDropdown />
           <UserButton appearance={{ elements: { avatarBox: "h-7 w-7" } }} />
@@ -101,7 +97,7 @@ export default function OverviewPage() {
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">{t("overview.myWorkEyebrow")}</p>
-                  <h2 className="mt-1 text-xl font-semibold tracking-tight">{t("overview.myWorkTitle")}</h2>
+                  <h2 className="mt-1 text-xl font-semibold tracking-tight">{t(`overview.greeting.${period}`, { name })}</h2>
                   <p className="mt-1 text-sm text-muted-foreground">{t("overview.myWorkSubtitle")}</p>
                 </div>
                 <Button

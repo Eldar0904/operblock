@@ -89,19 +89,6 @@ export function ReportsView({
         t={t}
       />
 
-      {data.byProject.length > 0 && (
-        <BreakdownCard title={t("reports.byProject")} empty={t("reports.noProjectData")}>
-          {data.byProject.map((row) => (
-            <BreakdownRow
-              key={row.projectId}
-              label={row.name}
-              count={row.count}
-              total={data.completed}
-            />
-          ))}
-        </BreakdownCard>
-      )}
-
       <div className="rounded-lg border border-border bg-background">
         <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-3">
           <h3 className="text-sm font-semibold">
@@ -189,7 +176,7 @@ function CompletionBuckets({
           </button>
         )}
       </div>
-      <div className="flex h-44 items-end gap-2 border-b border-border">
+      <div className="flex h-48 items-end gap-2 border-b border-border">
         {buckets.map((bucket) => {
           const isSelected = bucket.key === selectedBucket;
           const height = bucket.count === 0 ? 4 : Math.max(10, (bucket.count / max) * 100);
@@ -200,10 +187,12 @@ function CompletionBuckets({
               aria-pressed={isSelected}
               aria-label={`${bucket.label}: ${bucket.count}`}
               onClick={() => onSelect(bucket.key)}
-              className="flex min-w-0 flex-1 flex-col items-center justify-end gap-1 rounded-t px-1 pt-2 hover:bg-muted/50"
+              className="flex min-w-0 flex-1 flex-col items-center gap-1 rounded-t px-1 pt-2 hover:bg-muted/50"
             >
               <span className="text-xs font-medium">{bucket.count}</span>
-              <span className={cn("w-full rounded-t bg-indigo-500 transition-colors", isSelected && "bg-indigo-700")} style={{ height: `${height}%` }} />
+              <span className="flex h-32 w-full items-end">
+                <span className={cn("w-full rounded-t bg-indigo-500 transition-colors", isSelected && "bg-indigo-700")} style={{ height: `${height}%` }} />
+              </span>
               <span className="truncate text-[10px] text-muted-foreground">{bucket.label}</span>
             </button>
           );
@@ -263,51 +252,3 @@ function dateKey(value: Date) {
   return `${value.getFullYear()}-${value.getMonth()}-${value.getDate()}`;
 }
 
-function BreakdownCard({
-  title,
-  empty,
-  children,
-}: {
-  title: string;
-  empty: string;
-  children: React.ReactNode;
-}) {
-  const childArray = Array.isArray(children) ? children : [children];
-  const hasContent = childArray.length > 0;
-
-  return (
-    <div className="rounded-lg border border-border bg-background p-5">
-      <h3 className="mb-4 text-sm font-semibold">{title}</h3>
-      {!hasContent ? (
-        <p className="text-sm text-muted-foreground">{empty}</p>
-      ) : (
-        <div className="space-y-3">{children}</div>
-      )}
-    </div>
-  );
-}
-
-function BreakdownRow({
-  label,
-  count,
-  total,
-}: {
-  label: string;
-  count: number;
-  total: number;
-}) {
-  return (
-    <div className="flex items-center gap-3">
-      <span className="w-28 truncate text-sm text-muted-foreground">{label}</span>
-      <div className="flex-1">
-        <div className="h-2 overflow-hidden rounded-full bg-muted">
-          <div
-            className="h-full rounded-full bg-indigo-500"
-            style={{ width: total > 0 ? `${(count / total) * 100}%` : "0%" }}
-          />
-        </div>
-      </div>
-      <span className="w-8 text-right text-sm font-medium">{count}</span>
-    </div>
-  );
-}

@@ -96,6 +96,10 @@ router.get("/summary", async (req, res) => {
       return isInRange(new Date(t.completedAt), range);
     });
 
+    // The report table is an historical work log. Keep it independent from
+    // the selected period so users can review every task completed since launch.
+    const completedAllTime = allTasks.filter((t) => Boolean(t.completedAt));
+
     const completedInPrevious = allTasks.filter((t) => {
       if (!t.completedAt) return false;
       return isInRange(new Date(t.completedAt), previousRange);
@@ -178,7 +182,7 @@ router.get("/summary", async (req, res) => {
           count,
         }))
         .sort((a, b) => b.count - a.count),
-      completedTasks: completedInPeriod
+      completedTasks: completedAllTime
         .sort(
           (a, b) =>
             new Date(b.completedAt!).getTime() - new Date(a.completedAt!).getTime(),
