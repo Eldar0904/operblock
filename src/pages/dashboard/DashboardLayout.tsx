@@ -473,21 +473,15 @@ export default function DashboardLayout() {
           <button
             type="button"
             onClick={() => setOperoOpen((value) => !value)}
-            className={cn(
-              "mt-2 flex w-full items-center gap-3 rounded-lg border px-3 py-2.5 text-left transition-colors",
-              operoOpen
-                ? "border-indigo-200 bg-indigo-50 text-indigo-700"
-                : "border-indigo-100 bg-indigo-50/60 text-sidebar-foreground hover:bg-indigo-50",
-            )}
+            className="mt-2 flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sidebar-foreground transition-colors hover:bg-sidebar-accent"
           >
-            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-indigo-600 text-white">
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-sidebar-accent text-indigo-700">
               <Sparkles className="h-3.5 w-3.5" />
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-sm font-semibold">Opero</p>
               <p className="truncate text-[10px] text-muted-foreground">{t("opero.sidebarDescription")}</p>
             </div>
-            <span className="h-2 w-2 rounded-full bg-emerald-500" title={t("opero.ready")} />
           </button>
 
           <div className="my-2 border-t border-sidebar-border" />
