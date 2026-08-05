@@ -4,9 +4,8 @@ import { cn } from "@/lib/utils";
 import type { ReportSummary } from "@/lib/api";
 import { formatTicketId } from "@/lib/task-utils";
 import { usePeriodLabels, useReportFormatters } from "@/i18n/use-labels";
-import { formatPeriodLabel, localizeThroughputBuckets } from "@/lib/report-i18n";
+import { formatPeriodLabel } from "@/lib/report-i18n";
 import type { ReportPeriod } from "@/lib/report-utils";
-import { ThroughputChart } from "@/components/dashboard/ThroughputChart";
 
 interface ReportsViewProps {
   data: ReportSummary;
@@ -27,11 +26,10 @@ export function ReportsView({
 }: ReportsViewProps) {
   const { t } = useTranslation();
   const periodLabels = usePeriodLabels();
-  const { formatDelta, formatDeltaPct, priorityLabel, assigneeLabel, formatCompletedDate } =
+  const { formatDelta, formatDeltaPct, priorityLabel, formatCompletedDate } =
     useReportFormatters();
   const previousCompleted = data.completed - data.deltaCompleted;
   const periodLabel = formatPeriodLabel(period, data.period.start, data.period.end);
-  const throughput = localizeThroughputBuckets(period, data.period.start, data.throughput);
 
   const velocitySub =
     period === "week"
@@ -126,31 +124,6 @@ export function ReportsView({
           sub={t("reports.velocityMixedHint")}
           color="text-slate-600 bg-slate-50"
         />
-      </div>
-
-      <ThroughputChart data={throughput} />
-
-      <div className="grid gap-4 lg:grid-cols-2">
-        <BreakdownCard title={t("reports.byAssignee")} empty={t("reports.noAssigneeData")}>
-          {data.byAssignee.map((row) => (
-            <BreakdownRow
-              key={row.userId}
-              label={assigneeLabel(row.userId)}
-              count={row.count}
-              total={data.completed}
-            />
-          ))}
-        </BreakdownCard>
-        <BreakdownCard title={t("reports.byPriority")} empty={t("reports.noPriorityData")}>
-          {data.byPriority.map((row) => (
-            <BreakdownRow
-              key={row.priority}
-              label={priorityLabel(row.priority)}
-              count={row.count}
-              total={data.completed}
-            />
-          ))}
-        </BreakdownCard>
       </div>
 
       {data.byProject.length > 0 && (

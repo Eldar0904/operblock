@@ -32,6 +32,8 @@ i18n.use(initReactI18next).init({
         },
         overview: {
           dashboard: "My Work",
+          myWorkTitle: "My Work",
+          myWorkSubtitle: "Your tasks on the team board",
           defaultName: "there",
           greeting: {
             morning: "Good morning, {{name}}",

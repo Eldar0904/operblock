@@ -4,6 +4,8 @@
   "workspace": "PINE Group",
   "nav": {
     "dashboard": "Менің жұмысым",
+    "myWorkTitle": "Менің жұмысым",
+    "myWorkSubtitle": "Ортақ тақтадағы тапсырмаларыңыз",
     "daily": "Команда",
     "myTasks": "Маған тағайындалған",
     "goals": "Мақсаттар",
