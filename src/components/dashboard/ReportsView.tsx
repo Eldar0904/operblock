@@ -1,4 +1,5 @@
-import { CheckCircle2, Clock, Plus, TrendingUp } from "lucide-react";
+import { RotateCcw } from "lucide-react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import type { ReportSummary } from "@/lib/api";
@@ -26,17 +27,18 @@ export function ReportsView({
 }: ReportsViewProps) {
   const { t } = useTranslation();
   const periodLabels = usePeriodLabels();
-  const { formatDelta, formatDeltaPct, priorityLabel, formatCompletedDate } =
+  const { priorityLabel, formatCompletedDate } =
     useReportFormatters();
-  const previousCompleted = data.completed - data.deltaCompleted;
   const periodLabel = formatPeriodLabel(period, data.period.start, data.period.end);
-
-  const velocitySub =
-    period === "week"
-      ? t("reports.avgPerDay")
-      : period === "month"
-        ? t("reports.avgPerWeek")
-        : t("reports.totalInPeriod");
+  const [selectedBucket, setSelectedBucket] = useState<string | null>(null);
+  const buckets = useMemo(
+    () => buildCompletionBuckets(period, data.period.start, data.period.end, data.completedTasks),
+    [period, data.period.start, data.period.end, data.completedTasks],
+  );
+  const activeBucket = buckets.find((bucket) => bucket.key === selectedBucket);
+  const selectedTasks = activeBucket
+    ? data.completedTasks.filter((task) => activeBucket.taskIds.includes(task.id))
+    : data.completedTasks;
 
   return (
     <div className="space-y-6">
@@ -78,53 +80,14 @@ export function ReportsView({
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          icon={CheckCircle2}
-          label={t("reports.completed")}
-          value={data.completed}
-          sub={formatDelta(data.deltaCompleted)}
-          color="text-green-600 bg-green-50"
-        />
-        <StatCard
-          icon={Plus}
-          label={t("reports.created")}
-          value={data.created}
-          sub={t("reports.newInPeriod")}
-          color="text-indigo-600 bg-indigo-50"
-        />
-        <StatCard
-          icon={TrendingUp}
-          label={t("reports.velocityDaily")}
-          value={data.velocityDaily ?? 0}
-          sub={`${velocitySub} · ${t("reports.completedCount", { count: data.completedDaily ?? 0 })}`}
-          color="text-violet-600 bg-violet-50"
-        />
-        <StatCard
-          icon={TrendingUp}
-          label={t("reports.velocityProjects")}
-          value={data.velocityProjects ?? 0}
-          sub={`${velocitySub} · ${t("reports.completedCount", { count: data.completedProjects ?? 0 })}`}
-          color="text-sky-600 bg-sky-50"
-        />
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        <StatCard
-          icon={Clock}
-          label={t("reports.cycleTime")}
-          value={`${data.avgCycleTimeDays}d`}
-          sub={formatDeltaPct(data.completed, previousCompleted)}
-          color="text-amber-600 bg-amber-50"
-        />
-        <StatCard
-          icon={TrendingUp}
-          label={t("reports.velocityMixed")}
-          value={data.velocity}
-          sub={t("reports.velocityMixedHint")}
-          color="text-slate-600 bg-slate-50"
-        />
-      </div>
+      <CompletionBuckets
+        buckets={buckets}
+        selectedBucket={selectedBucket}
+        onSelect={(key) => setSelectedBucket((current) => (current === key ? null : key))}
+        onClear={() => setSelectedBucket(null)}
+        total={data.completedTasks.length}
+        t={t}
+      />
 
       {data.byProject.length > 0 && (
         <BreakdownCard title={t("reports.byProject")} empty={t("reports.noProjectData")}>
@@ -140,10 +103,18 @@ export function ReportsView({
       )}
 
       <div className="rounded-lg border border-border bg-background">
-        <div className="border-b border-border px-5 py-3">
-          <h3 className="text-sm font-semibold">{t("reports.completedTasks")}</h3>
+        <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-3">
+          <h3 className="text-sm font-semibold">
+            {t("reports.completedTasks")} <span className="text-muted-foreground">({selectedTasks.length})</span>
+          </h3>
+          {activeBucket && (
+            <button type="button" onClick={() => setSelectedBucket(null)} className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+              <RotateCcw className="h-3.5 w-3.5" />
+              {t("reports.clearBucket")}
+            </button>
+          )}
         </div>
-        {data.completedTasks.length === 0 ? (
+        {selectedTasks.length === 0 ? (
           <p className="p-5 text-sm text-muted-foreground">
             {t("reports.noCompletedInPeriod", { label: periodLabel })}
           </p>
@@ -159,7 +130,7 @@ export function ReportsView({
                 </tr>
               </thead>
               <tbody>
-                {data.completedTasks.map((task) => (
+                {selectedTasks.map((task) => (
                   <tr key={task.id} className="border-b border-border last:border-0">
                     <td className="px-5 py-2.5 font-mono text-xs text-muted-foreground">
                       {formatTicketId(task.id)}
@@ -182,30 +153,114 @@ export function ReportsView({
   );
 }
 
-function StatCard({
-  icon: Icon,
-  label,
-  value,
-  sub,
-  color,
-}: {
-  icon: typeof CheckCircle2;
+interface CompletionBucket {
+  key: string;
   label: string;
-  value: string | number;
-  sub?: string;
-  color: string;
+  count: number;
+  taskIds: string[];
+}
+
+function CompletionBuckets({
+  buckets,
+  selectedBucket,
+  onSelect,
+  onClear,
+  total,
+  t,
+}: {
+  buckets: CompletionBucket[];
+  selectedBucket: string | null;
+  onSelect: (key: string) => void;
+  onClear: () => void;
+  total: number;
+  t: (key: string, options?: Record<string, unknown>) => string;
 }) {
-  const [textColor, bgColor] = color.split(" ");
+  const max = Math.max(1, ...buckets.map((bucket) => bucket.count));
   return (
-    <div className="rounded-lg border border-border bg-background p-4">
-      <div className={cn("mb-3 inline-flex rounded-md p-2", bgColor)}>
-        <Icon className={cn("h-4 w-4", textColor)} />
+    <section className="rounded-lg border border-border bg-background p-5">
+      <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+        <div>
+          <h3 className="text-sm font-semibold">{t("reports.completedByPeriod")}</h3>
+          <p className="text-xs text-muted-foreground">{t("reports.completedCount", { count: total })}</p>
+        </div>
+        {selectedBucket && (
+          <button type="button" onClick={onClear} className="text-xs text-muted-foreground hover:text-foreground">
+            {t("reports.clearBucket")}
+          </button>
+        )}
       </div>
-      <p className="text-2xl font-bold">{value}</p>
-      <p className="text-sm text-muted-foreground">{label}</p>
-      {sub && <p className="mt-0.5 text-xs text-muted-foreground">{sub}</p>}
-    </div>
+      <div className="flex h-44 items-end gap-2 border-b border-border">
+        {buckets.map((bucket) => {
+          const isSelected = bucket.key === selectedBucket;
+          const height = bucket.count === 0 ? 4 : Math.max(10, (bucket.count / max) * 100);
+          return (
+            <button
+              key={bucket.key}
+              type="button"
+              aria-pressed={isSelected}
+              aria-label={`${bucket.label}: ${bucket.count}`}
+              onClick={() => onSelect(bucket.key)}
+              className="flex min-w-0 flex-1 flex-col items-center justify-end gap-1 rounded-t px-1 pt-2 hover:bg-muted/50"
+            >
+              <span className="text-xs font-medium">{bucket.count}</span>
+              <span className={cn("w-full rounded-t bg-indigo-500 transition-colors", isSelected && "bg-indigo-700")} style={{ height: `${height}%` }} />
+              <span className="truncate text-[10px] text-muted-foreground">{bucket.label}</span>
+            </button>
+          );
+        })}
+      </div>
+      <p className="mt-3 text-xs text-muted-foreground">{t("reports.bucketHint")}</p>
+    </section>
   );
+}
+
+function buildCompletionBuckets(
+  period: ReportPeriod,
+  startInput: string,
+  endInput: string,
+  tasks: ReportSummary["completedTasks"],
+): CompletionBucket[] {
+  const start = startOfDay(new Date(startInput));
+  const end = startOfDay(new Date(endInput));
+  const definitions: { key: string; label: string; matches: (date: Date) => boolean }[] = [];
+  const inRange = (date: Date) => date >= start && date <= end;
+
+  if (period === "week") {
+    for (let i = 0; i < 7; i += 1) {
+      const date = new Date(start);
+      date.setDate(start.getDate() + i);
+      const key = dateKey(date);
+      definitions.push({ key, label: date.toLocaleDateString(undefined, { weekday: "short", day: "numeric" }), matches: (value) => dateKey(value) === key });
+    }
+  } else if (period === "month") {
+    for (let i = 0; i < 5; i += 1) {
+      definitions.push({ key: `week-${i + 1}`, label: `W${i + 1}`, matches: (value) => inRange(value) && Math.floor((value.getDate() - 1) / 7) === i });
+    }
+  } else {
+    const count = period === "quarter" ? 3 : 12;
+    for (let i = 0; i < count; i += 1) {
+      const date = new Date(start);
+      date.setMonth(start.getMonth() + i);
+      const year = date.getFullYear();
+      const month = date.getMonth();
+      definitions.push({ key: `${year}-${month}`, label: date.toLocaleDateString(undefined, { month: "short" }), matches: (value) => inRange(value) && value.getFullYear() === year && value.getMonth() === month });
+    }
+  }
+
+  return definitions.map((definition) => {
+    const taskIds = tasks.filter((task) => task.completedAt && definition.matches(new Date(task.completedAt))).map((task) => task.id);
+    return { key: definition.key, label: definition.label, count: taskIds.length, taskIds };
+  });
+}
+
+function startOfDay(value: Date) {
+  const result = new Date(value);
+  result.setHours(0, 0, 0, 0);
+  return result;
+}
+
+function dateKey(value: Date) {
+  return `${value.getFullYear()}-${value.getMonth()}-${value.getDate()}`;
 }
 
 function BreakdownCard({

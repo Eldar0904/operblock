@@ -5,9 +5,11 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { BoardView } from "@/components/dashboard/BoardView";
+import { TaskModal, type TaskFormData } from "@/components/dashboard/TaskModal";
 import { NotificationsDropdown } from "@/components/dashboard/NotificationsDropdown";
-import { useDailyProject } from "@/hooks/useProjects";
-import { useAllTasks, useDeleteTask, useUpdateTaskStatus } from "@/hooks/useTasks";
+import { useDailyProject, useMembersList } from "@/hooks/useProjects";
+import { useAllTasks, useCreateTask, useDeleteTask, useUpdateTaskStatus } from "@/hooks/useTasks";
+import { useUploadPendingAttachments } from "@/hooks/useUploadPendingAttachments";
 import { getTaskAssigneeIds } from "@/lib/task-status";
 import type { TaskStatus } from "@/lib/mock-data";
 
@@ -18,8 +20,13 @@ export default function OverviewPage() {
   const [now, setNow] = useState(() => new Date());
   const { data: tasks = [], isLoading: tasksLoading, isError: tasksError } = useAllTasks();
   const { data: dailyProject, isLoading: dailyLoading } = useDailyProject();
+  const members = useMembersList();
+  const createTask = useCreateTask();
   const updateStatus = useUpdateTaskStatus();
   const deleteTask = useDeleteTask();
+  const uploadPendingAttachments = useUploadPendingAttachments();
+  const [addTaskOpen, setAddTaskOpen] = useState(false);
+  const [isUploadingAttachments, setIsUploadingAttachments] = useState(false);
   const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<TaskStatus | null>(null);
 
@@ -39,6 +46,35 @@ export default function OverviewPage() {
 
   const handleDelete = (task: (typeof myTasks)[number]) => {
     if (window.confirm(t("projects.deleteConfirm", { title: task.title }))) deleteTask.mutate(task.id);
+  };
+
+  const handleCreateTask = (form: TaskFormData, pendingFiles?: File[]) => {
+    if (!dailyProject || !user?.id) return;
+    createTask.mutate(
+      {
+        projectId: dailyProject.id,
+        title: form.title.trim(),
+        description: form.description || undefined,
+        status: "todo",
+        priority: form.priority || undefined,
+        dueDate: form.dueDate || undefined,
+        assigneeUserId: user.id,
+        assigneeUserIds: [user.id],
+      },
+      {
+        onSuccess: async (created) => {
+          if (pendingFiles?.length) {
+            setIsUploadingAttachments(true);
+            try {
+              await uploadPendingAttachments(created.id, pendingFiles);
+            } finally {
+              setIsUploadingAttachments(false);
+            }
+          }
+          setAddTaskOpen(false);
+        },
+      },
+    );
   };
 
   return (
@@ -71,7 +107,7 @@ export default function OverviewPage() {
                 <Button
                   size="sm"
                   className="bg-indigo-600 hover:bg-indigo-700"
-                  onClick={() => navigate("/dashboard/daily")}
+                  onClick={() => setAddTaskOpen(true)}
                 >
                   <Plus className="h-3.5 w-3.5" />
                   {t("projects.addTask")}
@@ -111,6 +147,16 @@ export default function OverviewPage() {
           </div>
         )}
       </div>
+      <TaskModal
+        open={addTaskOpen}
+        onClose={() => setAddTaskOpen(false)}
+        onSubmit={handleCreateTask}
+        defaultStatus="todo"
+        currentUserId={user?.id}
+        members={members}
+        defaultAssigneeToMe
+        isSubmitting={createTask.isPending || isUploadingAttachments}
+      />
     </>
   );
 }
