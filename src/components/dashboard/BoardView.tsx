@@ -30,7 +30,9 @@ export function BoardView({
   const columnConfig = useColumnConfig();
   const columns = columnConfig.map((col) => ({
     ...col,
-    tasks: tasks.filter((task) => task.status === col.id),
+    // Existing review tasks stay visible in the in-progress lane after the
+    // intermediate review column is removed from the workflow.
+    tasks: tasks.filter((task) => task.status === col.id || (col.id === "in_progress" && task.status === "in_review")),
   }));
 
   return (

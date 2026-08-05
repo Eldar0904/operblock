@@ -1,14 +1,13 @@
 import { useUser, UserButton } from "@clerk/clerk-react";
 import { useEffect, useState } from "react";
 import { CheckCircle2, Plus } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { BoardView } from "@/components/dashboard/BoardView";
 import { TaskModal, type TaskFormData } from "@/components/dashboard/TaskModal";
 import { NotificationsDropdown } from "@/components/dashboard/NotificationsDropdown";
 import { useDailyProject, useMembersList } from "@/hooks/useProjects";
-import { useAllTasks, useCreateTask, useDeleteTask, useUpdateTaskStatus } from "@/hooks/useTasks";
+import { useAllTasks, useCreateTask, useDeleteTask, useUpdateTask, useUpdateTaskStatus } from "@/hooks/useTasks";
 import { useUploadPendingAttachments } from "@/hooks/useUploadPendingAttachments";
 import { getTaskAssigneeIds } from "@/lib/task-status";
 import type { TaskStatus } from "@/lib/mock-data";
@@ -16,16 +15,18 @@ import type { TaskStatus } from "@/lib/mock-data";
 export default function OverviewPage() {
   const { t } = useTranslation();
   const { user } = useUser();
-  const navigate = useNavigate();
   const [now, setNow] = useState(() => new Date());
   const { data: tasks = [], isLoading: tasksLoading, isError: tasksError } = useAllTasks();
   const { data: dailyProject, isLoading: dailyLoading } = useDailyProject();
   const members = useMembersList();
   const createTask = useCreateTask();
   const updateStatus = useUpdateTaskStatus();
+  const updateTask = useUpdateTask();
   const deleteTask = useDeleteTask();
   const uploadPendingAttachments = useUploadPendingAttachments();
   const [addTaskOpen, setAddTaskOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<(typeof myTasks)[number] | null>(null);
+  const [defaultStatus, setDefaultStatus] = useState<TaskStatus>("todo");
   const [isUploadingAttachments, setIsUploadingAttachments] = useState(false);
   const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<TaskStatus | null>(null);
@@ -48,14 +49,30 @@ export default function OverviewPage() {
     if (window.confirm(t("projects.deleteConfirm", { title: task.title }))) deleteTask.mutate(task.id);
   };
 
-  const handleCreateTask = (form: TaskFormData, pendingFiles?: File[]) => {
+  const handleTaskSubmit = (form: TaskFormData, pendingFiles?: File[]) => {
     if (!dailyProject || !user?.id) return;
+    if (editingTask) {
+      updateTask.mutate(
+        {
+          id: editingTask.id,
+          title: form.title.trim(),
+          description: form.description || null,
+          status: form.status,
+          priority: form.priority || null,
+          dueDate: form.dueDate || null,
+          assigneeUserId: form.assigneeUserIds[0] ?? null,
+          assigneeUserIds: form.assigneeUserIds,
+        },
+        { onSuccess: () => { setEditingTask(null); setAddTaskOpen(false); } },
+      );
+      return;
+    }
     createTask.mutate(
       {
         projectId: dailyProject.id,
         title: form.title.trim(),
         description: form.description || undefined,
-        status: "todo",
+        status: form.status || defaultStatus,
         priority: form.priority || undefined,
         dueDate: form.dueDate || undefined,
         assigneeUserId: user.id,
@@ -72,6 +89,7 @@ export default function OverviewPage() {
             }
           }
           setAddTaskOpen(false);
+          setEditingTask(null);
         },
       },
     );
@@ -133,9 +151,12 @@ export default function OverviewPage() {
                   }}
                   dropTarget={dropTarget}
                   setDropTarget={setDropTarget}
-                  onEdit={() => navigate("/dashboard/daily")}
+                  onEdit={(task) => {
+                    setEditingTask(task.status === "in_review" ? { ...task, status: "in_progress" } : task);
+                    setAddTaskOpen(true);
+                  }}
                   onDelete={handleDelete}
-                  onAddToColumn={() => navigate("/dashboard/daily")}
+                  onAddToColumn={(status) => { setEditingTask(null); setDefaultStatus(status); setAddTaskOpen(true); }}
                 />
               </div>
             </section>
@@ -145,12 +166,13 @@ export default function OverviewPage() {
       <TaskModal
         open={addTaskOpen}
         onClose={() => setAddTaskOpen(false)}
-        onSubmit={handleCreateTask}
-        defaultStatus="todo"
+        onSubmit={handleTaskSubmit}
+        task={editingTask}
+        defaultStatus={defaultStatus}
         currentUserId={user?.id}
         members={members}
         defaultAssigneeToMe
-        isSubmitting={createTask.isPending || isUploadingAttachments}
+        isSubmitting={createTask.isPending || updateTask.isPending || isUploadingAttachments}
       />
     </>
   );
