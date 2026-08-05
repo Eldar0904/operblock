@@ -2,7 +2,7 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import { useAuth } from "@clerk/clerk-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { Bot, Check, ChevronLeft, History, LoaderCircle, Plus, Send, Sparkles, Trash2, X } from "lucide-react";
+import { Bot, Check, ChevronLeft, History, LoaderCircle, Plus, Send, Sparkles, Trash2, X, Zap } from "lucide-react";
 import { api, ApiError, type AiChatMessage, type AiConversation } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -12,6 +12,9 @@ function errorMessage(error: unknown, fallback: string) {
   }
   return fallback;
 }
+
+const AUTO_APPLY_STORAGE_KEY = "opero-auto-apply-safe-actions";
+const isDestructiveAction = (type: string) => type === "delete_task" || type === "delete_project";
 
 export default function AIAssistant() {
   const { getToken } = useAuth();
@@ -28,6 +31,7 @@ export default function AIAssistant() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [executing, setExecuting] = useState<string | null>(null);
+  const [autoApplySafe, setAutoApplySafe] = useState(() => localStorage.getItem(AUTO_APPLY_STORAGE_KEY) !== "false");
   const endRef = useRef<HTMLDivElement>(null);
 
   const token = () => getToken();
@@ -84,6 +88,13 @@ export default function AIAssistant() {
     try {
       const response = await api.sendAiMessage(await token(), activeId, content, i18n.resolvedLanguage ?? i18n.language);
       setMessages((current) => [...current.filter((message) => message.id !== optimistic.id), response.userMessage, response.assistantMessage]);
+      if (autoApplySafe) {
+        for (const [index, action] of response.assistantMessage.actions.entries()) {
+          if (!isDestructiveAction(action.type)) {
+            await executeAction(response.assistantMessage.id, index);
+          }
+        }
+      }
       void loadConversations();
     } catch (requestError) {
       setMessages((current) => current.filter((message) => message.id !== optimistic.id));
@@ -91,8 +102,7 @@ export default function AIAssistant() {
     } finally { setLoading(false); }
   };
 
-  const applyAction = async (messageId: string, actionIndex: number, label: string) => {
-    if (!window.confirm(t("opero.confirmAction", { action: label }))) return;
+  const executeAction = async (messageId: string, actionIndex: number) => {
     const key = `${messageId}-${actionIndex}`;
     setExecuting(key); setError(null);
     try {
@@ -105,6 +115,19 @@ export default function AIAssistant() {
       ]);
     } catch (requestError) { setError(errorMessage(requestError, unavailable)); }
     finally { setExecuting(null); }
+  };
+
+  const applyAction = async (messageId: string, actionIndex: number, label: string) => {
+    if (!window.confirm(t("opero.confirmAction", { action: label }))) return;
+    await executeAction(messageId, actionIndex);
+  };
+
+  const toggleAutoApply = () => {
+    setAutoApplySafe((current) => {
+      const next = !current;
+      localStorage.setItem(AUTO_APPLY_STORAGE_KEY, String(next));
+      return next;
+    });
   };
 
   const deleteConversation = async (id: string) => {
@@ -128,6 +151,7 @@ export default function AIAssistant() {
         {showHistory && <button onClick={() => setShowHistory(false)} className="rounded-lg p-1.5 hover:bg-white/15" aria-label={t("opero.back")}><ChevronLeft className="h-4 w-4" /></button>}
         <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15"><Sparkles className="h-4 w-4" /></div>
         <div className="min-w-0 flex-1"><h2 className="text-sm font-semibold">Opero</h2><p className="truncate text-xs text-indigo-100">{showHistory ? t("opero.history") : t("opero.agent")}</p></div>
+        {!showHistory && <button onClick={toggleAutoApply} className={cn("rounded-lg p-1.5 hover:bg-white/15", autoApplySafe && "bg-white/20")} title={autoApplySafe ? t("opero.autoApplyOn") : t("opero.autoApplyOff")} aria-label={autoApplySafe ? t("opero.autoApplyOn") : t("opero.autoApplyOff")}><Zap className="h-4 w-4" /></button>}
         {!showHistory && <button onClick={() => setShowHistory(true)} className="rounded-lg p-1.5 hover:bg-white/15" aria-label={t("opero.history")}><History className="h-4 w-4" /></button>}
         <button onClick={() => void newConversation()} className="rounded-lg p-1.5 hover:bg-white/15" aria-label={t("opero.newConversation")}><Plus className="h-4 w-4" /></button>
         <button onClick={() => setOpen(false)} className="rounded-lg p-1.5 hover:bg-white/15" aria-label={t("opero.close")}><X className="h-4 w-4" /></button>
@@ -145,7 +169,7 @@ export default function AIAssistant() {
           {loading && <div className="flex justify-start"><div className="rounded-2xl bg-muted px-3 py-2"><LoaderCircle className="h-4 w-4 animate-spin" /></div></div>}
           {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">{error}</p>}<div ref={endRef} />
         </div>
-        <form onSubmit={submit} className="border-t border-border p-3"><div className="flex items-end gap-2 rounded-xl border border-input p-2 focus-within:ring-2 focus-within:ring-indigo-500/30"><textarea value={input} onChange={(event) => setInput(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); submit(event); } }} rows={1} maxLength={8000} placeholder={t("opero.placeholder")} className="max-h-28 min-h-8 flex-1 resize-none bg-transparent px-1 py-1.5 text-sm outline-none" /><button type="submit" disabled={!input.trim() || loading || !activeId} className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-white disabled:opacity-40"><Send className="h-3.5 w-3.5" /></button></div><p className="mt-1.5 text-center text-[10px] text-muted-foreground">{t("opero.disclaimer")}</p></form>
+        <form onSubmit={submit} className="border-t border-border p-3"><div className="flex items-end gap-2 rounded-xl border border-input p-2 focus-within:ring-2 focus-within:ring-indigo-500/30"><textarea value={input} onChange={(event) => setInput(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); submit(event); } }} rows={1} maxLength={8000} placeholder={t("opero.placeholder")} className="max-h-28 min-h-8 flex-1 resize-none bg-transparent px-1 py-1.5 text-sm outline-none" /><button type="submit" disabled={!input.trim() || loading || !activeId} className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-white disabled:opacity-40"><Send className="h-3.5 w-3.5" /></button></div><p className="mt-1.5 text-center text-[10px] text-muted-foreground">{autoApplySafe ? t("opero.autoApplyNotice") : t("opero.disclaimer")}</p></form>
       </>}
     </section>}
     <button onClick={() => setOpen((value) => !value)} className="ml-auto flex h-13 w-13 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-lg hover:bg-indigo-700" aria-label={open ? t("opero.close") : t("opero.open")}>{open ? <X className="h-5 w-5" /> : <Sparkles className="h-5 w-5" />}</button>
