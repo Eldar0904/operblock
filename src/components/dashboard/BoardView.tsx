@@ -38,8 +38,8 @@ export function BoardView({
   return (
     <div className="grid h-full min-w-[980px] grid-cols-4 gap-4">
       {columns.map((column) => (
-        <div key={column.id} className="flex min-w-0 flex-col">
-          <div className="group mb-3 flex min-h-9 items-center justify-between rounded-md bg-muted/60 px-2.5 py-1.5 transition-colors hover:bg-muted">
+        <div key={column.id} className="flex min-w-0 flex-col rounded-lg border border-border bg-background/60 p-2">
+          <div className="group mb-2 flex min-h-9 items-center px-1.5 py-1">
             <div className="flex min-w-0 items-center gap-2">
               <h2 className="truncate text-sm font-semibold text-foreground">{column.title}</h2>
               <span className="shrink-0 rounded-full bg-background px-2 py-0.5 text-xs text-muted-foreground shadow-sm">
@@ -49,7 +49,7 @@ export function BoardView({
             <button
               type="button"
               onClick={() => onAddToColumn(column.id)}
-              className="ml-2 shrink-0 rounded p-1 text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
+              className="ml-1 shrink-0 rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
               title={t("projects.addTask")}
               aria-label={`${t("projects.addTask")}: ${column.title}`}
             >
@@ -58,7 +58,7 @@ export function BoardView({
           </div>
           <div
             className={cn(
-              "flex-1 space-y-3 overflow-y-auto rounded-lg bg-muted/50 p-2 transition-colors",
+              "flex-1 space-y-3 overflow-y-auto rounded-md bg-muted/40 p-2 transition-colors",
               dropTarget === column.id && "bg-indigo-50 ring-2 ring-indigo-200",
             )}
             onDragOver={(e) => {
