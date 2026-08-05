@@ -3,9 +3,9 @@
   "company": "PINE",
   "workspace": "PINE Group",
   "nav": {
-    "dashboard": "Басты бет",
-    "daily": "Күнделікті",
-    "myTasks": "Менің тапсырмаларым",
+    "dashboard": "Менің жұмысым",
+    "daily": "Команда",
+    "myTasks": "Маған тағайындалған",
     "goals": "Мақсаттар",
     "reports": "Есептер",
     "projects": "Жобалар",
@@ -166,7 +166,13 @@
     "projectTitle": "Жоба шолуы",
     "workspaceTitle": "Жұмыс орны шолуы",
     "workspace": "Жұмыс орны",
-    "dashboard": "Басты бет",
+    "dashboard": "Менің жұмысым",
+    "defaultName": "әріптес",
+    "greeting": {
+      "morning": "Қайырлы таң, {{name}}",
+      "afternoon": "Қайырлы күн, {{name}}",
+      "evening": "Қайырлы кеш, {{name}}"
+    },
     "loadingStats": "Статистика жүктелуде…",
     "loadError": "Басты бет деректері жүктелмedi",
     "totalTasks": "Барлық тапсырма",

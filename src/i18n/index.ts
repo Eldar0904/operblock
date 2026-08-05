@@ -25,6 +25,20 @@ i18n.use(initReactI18next).init({
     kk: { translation: kk },
     en: {
       translation: {
+        nav: {
+          dashboard: "My Work",
+          daily: "Team",
+          myTasks: "Assigned to me",
+        },
+        overview: {
+          dashboard: "My Work",
+          defaultName: "there",
+          greeting: {
+            morning: "Good morning, {{name}}",
+            afternoon: "Good afternoon, {{name}}",
+            evening: "Good evening, {{name}}",
+          },
+        },
         opero: {
           agent: "Your OperBlock agent",
           history: "Conversation history",
@@ -44,7 +58,12 @@ i18n.use(initReactI18next).init({
           unavailable: "Opero is unavailable.",
           confirmAction: "Allow Opero to {{action}}?",
           reviewApply: "Review and apply",
-          applied: "Applied"
+          applied: "Applied",
+          sidebarDescription: "Workspace AI assistant",
+          ready: "Ready",
+          workingWith: "Current project:",
+          starterProjectSummary: "Summarize the state of {{project}}",
+          starterProjectAttention: "What needs attention in {{project}}?"
         }
       }
     },

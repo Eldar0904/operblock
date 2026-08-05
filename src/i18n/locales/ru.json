@@ -3,9 +3,9 @@
   "company": "PINE",
   "workspace": "PINE Group",
   "nav": {
-    "dashboard": "Дашборд",
-    "daily": "Ежедневные",
-    "myTasks": "Мои задачи",
+    "dashboard": "Моя работа",
+    "daily": "Команда",
+    "myTasks": "Назначено мне",
     "goals": "Цели",
     "reports": "Отчёты",
     "projects": "Проекты",
@@ -166,7 +166,13 @@
     "projectTitle": "Обзор проекта",
     "workspaceTitle": "Обзор рабочего пространства",
     "workspace": "Рабочее пространство",
-    "dashboard": "Дашборд",
+    "dashboard": "Моя работа",
+    "defaultName": "коллега",
+    "greeting": {
+      "morning": "Доброе утро, {{name}}",
+      "afternoon": "Добрый день, {{name}}",
+      "evening": "Добрый вечер, {{name}}"
+    },
     "loadingStats": "Загрузка статистики…",
     "loadError": "Не удалось загрузить данные дашборда",
     "totalTasks": "Всего задач",

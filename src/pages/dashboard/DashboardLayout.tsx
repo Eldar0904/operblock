@@ -9,7 +9,6 @@ import {
   FolderKanban,
   LayoutDashboard,
   LayoutGrid,
-  List,
   Lock,
   MoreHorizontal,
   Pencil,
@@ -257,11 +256,9 @@ export default function DashboardLayout() {
   const dailyNav = [
     { icon: LayoutDashboard, label: t("nav.dashboard"), to: "/dashboard" },
     { icon: CalendarDays, label: t("nav.daily"), to: "/dashboard/daily" },
-    { icon: List, label: t("nav.myTasks"), to: "/dashboard/my-tasks" },
   ];
 
   const longTermNav = [
-    { icon: FolderKanban, label: t("nav.projects"), to: "/dashboard/projects" },
     { icon: Target, label: t("nav.goals"), to: "/dashboard/goals" },
   ];
 
@@ -486,6 +483,11 @@ export default function DashboardLayout() {
 
           <div className="my-2 border-t border-sidebar-border" />
 
+          <NavLink to="/dashboard/projects" className={navLinkClass}>
+            <FolderKanban className="h-4 w-4" />
+            <span>{t("nav.projects")}</span>
+          </NavLink>
+
           {longTermNav.map(({ icon: Icon, label, to }) => (
             <NavLink key={to} to={to} className={navLinkClass}>
               <Icon className="h-4 w-4" />
@@ -493,7 +495,7 @@ export default function DashboardLayout() {
             </NavLink>
           ))}
 
-          <div className="pt-4">
+          {false && <div className="ml-2 border-l border-sidebar-border pl-2 pt-1">
             <div className="mb-1 flex items-center justify-between px-3">
               <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                 {t("common.projects")}
@@ -653,7 +655,7 @@ export default function DashboardLayout() {
                 )}
               </div>
             )}
-          </div>
+          </div>}
         </nav>
 
         <div className="space-y-2 border-t border-sidebar-border p-3">

@@ -1,4 +1,5 @@
-import { UserButton } from "@clerk/clerk-react";
+import { useUser, UserButton } from "@clerk/clerk-react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { MomentumDashboard } from "@/components/dashboard/MomentumDashboard";
 import { NotificationsDropdown } from "@/components/dashboard/NotificationsDropdown";
@@ -8,18 +9,27 @@ import { useAllTasks } from "@/hooks/useTasks";
 
 export default function OverviewPage() {
   const { t } = useTranslation();
+  const { user } = useUser();
+  const [now, setNow] = useState(() => new Date());
   const { data: tasks = [], isLoading: tasksLoading, isError: tasksError } = useAllTasks();
   const { data: dailyProject, isLoading: dailyLoading } = useDailyProject();
   const { data: weekReport, isLoading: reportsLoading } = useReports("week");
 
   const isLoading = tasksLoading || dailyLoading;
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(new Date()), 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
+  const hour = now.getHours();
+  const period = hour < 12 ? "morning" : hour < 18 ? "afternoon" : "evening";
+  const name = user?.firstName ?? user?.username ?? t("overview.defaultName");
 
   return (
     <>
       <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-background px-6">
         <div>
-          <p className="text-xs text-muted-foreground">{t("overview.workspace")}</p>
-          <h1 className="text-base font-semibold">{t("overview.dashboard")}</h1>
+          <p className="text-xs text-muted-foreground">{t("overview.dashboard")}</p>
+          <h1 className="text-base font-semibold">{t(`overview.greeting.${period}`, { name })}</h1>
         </div>
         <div className="flex items-center gap-3">
           <NotificationsDropdown />
