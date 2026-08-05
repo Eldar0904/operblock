@@ -34,7 +34,7 @@ i18n.use(initReactI18next).init({
           dashboard: "My Work",
           myWorkTitle: "My Work",
           myWorkSubtitle: "Your tasks on the team board",
-          myWorkEyebrow: "Personal workstream",
+          myWorkEyebrow: "Your personal workflow",
           myWorkBoard: "Task board",
           myWorkOpen: "{{count}} open",
           myWorkDone: "{{count}} done",

@@ -96,9 +96,8 @@ export default function OverviewPage() {
             <section className="rounded-xl border border-border bg-background p-5 shadow-sm">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">{t("overview.myWorkEyebrow")}</p>
                   <h2 className="mt-1 text-xl font-semibold tracking-tight">{t(`overview.greeting.${period}`, { name })}</h2>
-                  <p className="mt-1 text-sm text-muted-foreground">{t("overview.myWorkSubtitle")}</p>
+                  <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-indigo-600">{t("overview.myWorkEyebrow")}</p>
                 </div>
                 <Button
                   size="sm"
