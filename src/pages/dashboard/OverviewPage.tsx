@@ -1,7 +1,9 @@
 import { useUser, UserButton } from "@clerk/clerk-react";
 import { useEffect, useState } from "react";
+import { CheckCircle2, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { Button } from "@/components/ui/button";
 import { BoardView } from "@/components/dashboard/BoardView";
 import { NotificationsDropdown } from "@/components/dashboard/NotificationsDropdown";
 import { useDailyProject } from "@/hooks/useProjects";
@@ -32,6 +34,8 @@ export default function OverviewPage() {
   const myTasks = tasks.filter(
     (task) => dailyProject?.id === task.projectId && Boolean(user?.id) && getTaskAssigneeIds(task).includes(user!.id),
   );
+  const doneCount = myTasks.filter((task) => task.status === "done").length;
+  const openCount = myTasks.length - doneCount;
 
   const handleDelete = (task: (typeof myTasks)[number]) => {
     if (window.confirm(t("projects.deleteConfirm", { title: task.title }))) deleteTask.mutate(task.id);
@@ -57,28 +61,53 @@ export default function OverviewPage() {
           <p className="text-sm text-red-600">{t("overview.loadError")}</p>
         ) : (
           <div className="flex h-full min-h-[520px] flex-col gap-5">
-            <div>
-              <h2 className="text-lg font-semibold">{t("overview.myWorkTitle")}</h2>
-              <p className="mt-1 text-sm text-muted-foreground">{t("overview.myWorkSubtitle")}</p>
-            </div>
-            <div className="min-h-0 flex-1 overflow-x-auto">
-              <BoardView
-                tasks={myTasks}
-                onDragStart={setDraggingTaskId}
-                onDrop={(status) => {
-                  if (!draggingTaskId) return;
-                  const task = myTasks.find((item) => item.id === draggingTaskId);
-                  if (task && task.status !== status) updateStatus.mutate({ id: task.id, status });
-                  setDraggingTaskId(null);
-                  setDropTarget(null);
-                }}
-                dropTarget={dropTarget}
-                setDropTarget={setDropTarget}
-                onEdit={() => navigate("/dashboard/daily")}
-                onDelete={handleDelete}
-                onAddToColumn={() => navigate("/dashboard/daily")}
-              />
-            </div>
+            <section className="rounded-xl border border-border bg-background p-5 shadow-sm">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">{t("overview.myWorkEyebrow")}</p>
+                  <h2 className="mt-1 text-xl font-semibold tracking-tight">{t("overview.myWorkTitle")}</h2>
+                  <p className="mt-1 text-sm text-muted-foreground">{t("overview.myWorkSubtitle")}</p>
+                </div>
+                <Button
+                  size="sm"
+                  className="bg-indigo-600 hover:bg-indigo-700"
+                  onClick={() => navigate("/dashboard/daily")}
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  {t("projects.addTask")}
+                </Button>
+              </div>
+              <div className="mt-5 flex flex-wrap gap-2 text-xs">
+                <span className="rounded-full bg-muted px-3 py-1.5 text-muted-foreground">
+                  {t("overview.myWorkOpen", { count: openCount })}
+                </span>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5 text-emerald-700">
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  {t("overview.myWorkDone", { count: doneCount })}
+                </span>
+              </div>
+            </section>
+            <section className="min-h-0 flex-1 rounded-xl border border-border bg-muted/20 p-3">
+              <div className="mb-2 px-1 text-xs font-medium text-muted-foreground">{t("overview.myWorkBoard")}</div>
+              <div className="h-[calc(100%-28px)] overflow-x-auto">
+                <BoardView
+                  tasks={myTasks}
+                  onDragStart={setDraggingTaskId}
+                  onDrop={(status) => {
+                    if (!draggingTaskId) return;
+                    const task = myTasks.find((item) => item.id === draggingTaskId);
+                    if (task && task.status !== status) updateStatus.mutate({ id: task.id, status });
+                    setDraggingTaskId(null);
+                    setDropTarget(null);
+                  }}
+                  dropTarget={dropTarget}
+                  setDropTarget={setDropTarget}
+                  onEdit={() => navigate("/dashboard/daily")}
+                  onDelete={handleDelete}
+                  onAddToColumn={() => navigate("/dashboard/daily")}
+                />
+              </div>
+            </section>
           </div>
         )}
       </div>

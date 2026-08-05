@@ -4,8 +4,6 @@
   "workspace": "PINE Group",
   "nav": {
     "dashboard": "Моя работа",
-    "myWorkTitle": "Моя работа",
-    "myWorkSubtitle": "Ваши задачи на общей доске",
     "daily": "Команда",
     "myTasks": "Назначено мне",
     "goals": "Цели",
@@ -169,6 +167,12 @@
     "workspaceTitle": "Обзор рабочего пространства",
     "workspace": "Рабочее пространство",
     "dashboard": "Моя работа",
+    "myWorkTitle": "Моя работа",
+    "myWorkSubtitle": "Ваши задачи на общей доске",
+    "myWorkEyebrow": "Личный рабочий поток",
+    "myWorkBoard": "Доска задач",
+    "myWorkOpen": "{{count}} открытых",
+    "myWorkDone": "{{count}} готово",
     "defaultName": "коллега",
     "greeting": {
       "morning": "Доброе утро, {{name}}",
@@ -412,7 +416,7 @@
     "autoApplyOn": "Автоприменение безопасных действий включено",
     "autoApplyOff": "Автоприменение безопасных действий выключено",
     "autoApplyNotice": "Безопасные изменения применяются автоматически. Удаление требует подтверждения.",
-    "sidebarDescription": "ИИ-помощник рабочего пространства",
+    "sidebarDescription": "Ассистент",
     "workingWith": "Текущий проект:",
     "starterProjectSummary": "Кратко опиши состояние проекта «{{project}}»",
     "starterProjectAttention": "Что требует внимания в проекте «{{project}}»?"

@@ -4,8 +4,6 @@
   "workspace": "PINE Group",
   "nav": {
     "dashboard": "Менің жұмысым",
-    "myWorkTitle": "Менің жұмысым",
-    "myWorkSubtitle": "Ортақ тақтадағы тапсырмаларыңыз",
     "daily": "Команда",
     "myTasks": "Маған тағайындалған",
     "goals": "Мақсаттар",
@@ -169,6 +167,12 @@
     "workspaceTitle": "Жұмыс орны шолуы",
     "workspace": "Жұмыс орны",
     "dashboard": "Менің жұмысым",
+    "myWorkTitle": "Менің жұмысым",
+    "myWorkSubtitle": "Ортақ тақтадағы тапсырмаларыңыз",
+    "myWorkEyebrow": "Жеке жұмыс ағыны",
+    "myWorkBoard": "Тапсырмалар тақтасы",
+    "myWorkOpen": "{{count}} ашық",
+    "myWorkDone": "{{count}} орындалды",
     "defaultName": "әріптес",
     "greeting": {
       "morning": "Қайырлы таң, {{name}}",
@@ -412,7 +416,7 @@
     "autoApplyOn": "Қауіпсіз әрекеттерді автоматты қолдану қосулы",
     "autoApplyOff": "Қауіпсіз әрекеттерді автоматты қолдану өшірулі",
     "autoApplyNotice": "Қауіпсіз өзгерістер автоматты қолданылады. Жою растауды қажет етеді.",
-    "sidebarDescription": "Жұмыс кеңістігінің ЖИ көмекшісі",
+    "sidebarDescription": "Көмекші",
     "workingWith": "Ағымдағы жоба:",
     "starterProjectSummary": "«{{project}}» жобасының күйін қысқаша сипатта",
     "starterProjectAttention": "«{{project}}» жобасында неге назар аудару керек?"

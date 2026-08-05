@@ -467,20 +467,6 @@ export default function DashboardLayout() {
             </NavLink>
           ))}
 
-          <button
-            type="button"
-            onClick={() => setOperoOpen((value) => !value)}
-            className="mt-2 flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sidebar-foreground transition-colors hover:bg-sidebar-accent"
-          >
-            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-sidebar-accent text-indigo-700">
-              <Sparkles className="h-3.5 w-3.5" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold">Opero</p>
-              <p className="truncate text-[10px] text-muted-foreground">{t("opero.sidebarDescription")}</p>
-            </div>
-          </button>
-
           <div className="my-2 border-t border-sidebar-border" />
 
           <NavLink to="/dashboard/projects" className={navLinkClass}>
@@ -494,6 +480,20 @@ export default function DashboardLayout() {
               <span className="flex-1 text-left">{label}</span>
             </NavLink>
           ))}
+
+          <button
+            type="button"
+            onClick={() => setOperoOpen((value) => !value)}
+            className="mt-2 flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sidebar-foreground transition-colors hover:bg-sidebar-accent"
+          >
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-sidebar-accent text-indigo-700">
+              <Sparkles className="h-3.5 w-3.5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold">Opero</p>
+              <p className="truncate text-[10px] text-muted-foreground">{t("opero.sidebarDescription")}</p>
+            </div>
+          </button>
 
           {false && <div className="ml-2 border-l border-sidebar-border pl-2 pt-1">
             <div className="mb-1 flex items-center justify-between px-3">
