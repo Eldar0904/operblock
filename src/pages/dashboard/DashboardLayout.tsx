@@ -15,6 +15,7 @@ import {
   Pencil,
   Plus,
   Settings,
+  Sparkles,
   Target,
   Trash2,
 } from "lucide-react";
@@ -68,6 +69,7 @@ export default function DashboardLayout() {
   const [renamingPortfolioId, setRenamingPortfolioId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const [menuProjectId, setMenuProjectId] = useState<string | null>(null);
+  const [operoOpen, setOperoOpen] = useState(false);
   const [collapsed, setCollapsed] = useState<Set<string>>(() => {
     try {
       const raw = localStorage.getItem(COLLAPSED_PORTFOLIOS_KEY);
@@ -468,6 +470,26 @@ export default function DashboardLayout() {
             </NavLink>
           ))}
 
+          <button
+            type="button"
+            onClick={() => setOperoOpen((value) => !value)}
+            className={cn(
+              "mt-2 flex w-full items-center gap-3 rounded-lg border px-3 py-2.5 text-left transition-colors",
+              operoOpen
+                ? "border-indigo-200 bg-indigo-50 text-indigo-700"
+                : "border-indigo-100 bg-indigo-50/60 text-sidebar-foreground hover:bg-indigo-50",
+            )}
+          >
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-indigo-600 text-white">
+              <Sparkles className="h-3.5 w-3.5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold">Opero</p>
+              <p className="truncate text-[10px] text-muted-foreground">{t("opero.sidebarDescription")}</p>
+            </div>
+            <span className="h-2 w-2 rounded-full bg-emerald-500" title={t("opero.ready")} />
+          </button>
+
           <div className="my-2 border-t border-sidebar-border" />
 
           {longTermNav.map(({ icon: Icon, label, to }) => (
@@ -661,7 +683,11 @@ export default function DashboardLayout() {
       <div className="flex min-w-0 flex-1 flex-col">
         <Outlet context={{ activeProject }} />
       </div>
-      <AIAssistant />
+      <AIAssistant
+        desktopOpen={operoOpen}
+        onDesktopOpenChange={setOperoOpen}
+        contextProjectName={routeProjectId ? activeProject?.name : undefined}
+      />
     </div>
   );
 }

@@ -16,11 +16,23 @@ function errorMessage(error: unknown, fallback: string) {
 const AUTO_APPLY_STORAGE_KEY = "opero-auto-apply-safe-actions";
 const isDestructiveAction = (type: string) => type === "delete_task" || type === "delete_project";
 
-export default function AIAssistant() {
+interface AIAssistantProps {
+  desktopOpen: boolean;
+  onDesktopOpenChange: (open: boolean) => void;
+  contextProjectName?: string;
+}
+
+export default function AIAssistant({ desktopOpen, onDesktopOpenChange, contextProjectName }: AIAssistantProps) {
   const { getToken } = useAuth();
   const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
-  const starters = [t("opero.starterOverdue"), t("opero.starterRisks"), t("opero.starterPriorities")];
+  const starters = contextProjectName
+    ? [
+        t("opero.starterProjectSummary", { project: contextProjectName }),
+        t("opero.starterProjectAttention", { project: contextProjectName }),
+        t("opero.starterPriorities"),
+      ]
+    : [t("opero.starterOverdue"), t("opero.starterRisks"), t("opero.starterPriorities")];
   const unavailable = t("opero.unavailable");
   const [open, setOpen] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
@@ -33,6 +45,7 @@ export default function AIAssistant() {
   const [executing, setExecuting] = useState<string | null>(null);
   const [autoApplySafe, setAutoApplySafe] = useState(() => localStorage.getItem(AUTO_APPLY_STORAGE_KEY) !== "false");
   const endRef = useRef<HTMLDivElement>(null);
+  const panelOpen = open || desktopOpen;
 
   const token = () => getToken();
 
@@ -66,7 +79,7 @@ export default function AIAssistant() {
   };
 
   useEffect(() => {
-    if (!open || activeId) return;
+    if (!panelOpen || activeId) return;
     void (async () => {
       setLoading(true);
       try {
@@ -75,7 +88,7 @@ export default function AIAssistant() {
         else await newConversation();
       } catch (requestError) { setError(errorMessage(requestError, unavailable)); setLoading(false); }
     })();
-  }, [open, activeId]);
+  }, [panelOpen, activeId]);
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, loading]);
 
@@ -145,8 +158,13 @@ export default function AIAssistant() {
 
   const submit = (event: FormEvent) => { event.preventDefault(); void send(input); };
 
-  return <div className="fixed bottom-5 right-5 z-50">
-    {open && <section className="mb-3 flex h-[min(680px,calc(100vh-100px))] w-[min(420px,calc(100vw-32px))] flex-col overflow-hidden rounded-2xl border border-border bg-background shadow-2xl">
+  const closeAssistant = () => {
+    setOpen(false);
+    onDesktopOpenChange(false);
+  };
+
+  return <div className={cn("fixed bottom-5 right-5 z-50 lg:static lg:z-0 lg:h-screen lg:shrink-0 lg:transition-[width] lg:duration-200", desktopOpen ? "lg:w-[420px]" : "lg:w-0 lg:overflow-hidden")}>
+    {panelOpen && <section className="mb-3 flex h-[min(680px,calc(100vh-100px))] w-[min(420px,calc(100vw-32px))] flex-col overflow-hidden rounded-2xl border border-border bg-background shadow-2xl lg:mb-0 lg:h-full lg:w-[420px] lg:rounded-none lg:border-y-0 lg:border-r-0 lg:shadow-none">
       <header className="flex items-center gap-2 border-b border-border bg-indigo-600 px-3 py-3 text-white">
         {showHistory && <button onClick={() => setShowHistory(false)} className="rounded-lg p-1.5 hover:bg-white/15" aria-label={t("opero.back")}><ChevronLeft className="h-4 w-4" /></button>}
         <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15"><Sparkles className="h-4 w-4" /></div>
@@ -154,7 +172,7 @@ export default function AIAssistant() {
         {!showHistory && <button onClick={toggleAutoApply} className={cn("rounded-lg p-1.5 hover:bg-white/15", autoApplySafe && "bg-white/20")} title={autoApplySafe ? t("opero.autoApplyOn") : t("opero.autoApplyOff")} aria-label={autoApplySafe ? t("opero.autoApplyOn") : t("opero.autoApplyOff")}><Zap className="h-4 w-4" /></button>}
         {!showHistory && <button onClick={() => setShowHistory(true)} className="rounded-lg p-1.5 hover:bg-white/15" aria-label={t("opero.history")}><History className="h-4 w-4" /></button>}
         <button onClick={() => void newConversation()} className="rounded-lg p-1.5 hover:bg-white/15" aria-label={t("opero.newConversation")}><Plus className="h-4 w-4" /></button>
-        <button onClick={() => setOpen(false)} className="rounded-lg p-1.5 hover:bg-white/15" aria-label={t("opero.close")}><X className="h-4 w-4" /></button>
+        <button onClick={closeAssistant} className="rounded-lg p-1.5 hover:bg-white/15" aria-label={t("opero.close")}><X className="h-4 w-4" /></button>
       </header>
 
       {showHistory ? <div className="flex-1 overflow-y-auto p-3">
@@ -163,6 +181,7 @@ export default function AIAssistant() {
           <button onClick={() => void deleteConversation(conversation.id)} className="mr-2 rounded p-1 text-muted-foreground opacity-0 hover:bg-red-50 hover:text-red-600 group-hover:opacity-100" aria-label={t("opero.delete")}><Trash2 className="h-3.5 w-3.5" /></button>
         </div>)}
       </div> : <>
+        {contextProjectName && <div className="border-b border-border bg-indigo-50 px-4 py-2 text-xs text-indigo-800"><span className="font-medium">{t("opero.workingWith")}</span> {contextProjectName}</div>}
         <div className="flex-1 space-y-3 overflow-y-auto p-4">
           {!loading && messages.length === 0 && <div className="space-y-4 pt-5 text-center"><div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600"><Bot className="h-6 w-6" /></div><div><p className="text-sm font-medium">{t("opero.askTitle")}</p><p className="mt-1 text-xs text-muted-foreground">{t("opero.askDescription")}</p></div><div className="space-y-2">{starters.map((starter) => <button key={starter} onClick={() => void send(starter)} className="w-full rounded-lg border border-border px-3 py-2 text-left text-xs hover:bg-muted">{starter}</button>)}</div></div>}
           {messages.map((message) => <div key={message.id} className={cn("flex", message.role === "user" ? "justify-end" : "justify-start")}><div className="max-w-[90%] space-y-2"><div className={cn("whitespace-pre-wrap rounded-2xl px-3 py-2 text-sm leading-relaxed", message.role === "user" ? "rounded-br-md bg-indigo-600 text-white" : "rounded-bl-md bg-muted")}>{message.content}</div>{message.actions.map((action, index) => { const key = `${message.id}-${index}`; return <div key={key} className="rounded-xl border border-indigo-200 bg-indigo-50 p-3"><p className="text-xs font-medium text-indigo-950">{action.label}</p><button disabled={action.status === "completed" || executing === key} onClick={() => void applyAction(message.id, index, action.label)} className="mt-2 flex items-center gap-1.5 rounded-md bg-indigo-600 px-2.5 py-1.5 text-xs font-medium text-white disabled:bg-emerald-600">{executing === key ? <LoaderCircle className="h-3 w-3 animate-spin" /> : action.status === "completed" ? <Check className="h-3 w-3" /> : null}{action.status === "completed" ? t("opero.applied") : t("opero.reviewApply")}</button></div>; })}</div></div>)}
@@ -172,6 +191,6 @@ export default function AIAssistant() {
         <form onSubmit={submit} className="border-t border-border p-3"><div className="flex items-end gap-2 rounded-xl border border-input p-2 focus-within:ring-2 focus-within:ring-indigo-500/30"><textarea value={input} onChange={(event) => setInput(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); submit(event); } }} rows={1} maxLength={8000} placeholder={t("opero.placeholder")} className="max-h-28 min-h-8 flex-1 resize-none bg-transparent px-1 py-1.5 text-sm outline-none" /><button type="submit" disabled={!input.trim() || loading || !activeId} className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-white disabled:opacity-40"><Send className="h-3.5 w-3.5" /></button></div><p className="mt-1.5 text-center text-[10px] text-muted-foreground">{autoApplySafe ? t("opero.autoApplyNotice") : t("opero.disclaimer")}</p></form>
       </>}
     </section>}
-    <button onClick={() => setOpen((value) => !value)} className="ml-auto flex h-13 w-13 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-lg hover:bg-indigo-700" aria-label={open ? t("opero.close") : t("opero.open")}>{open ? <X className="h-5 w-5" /> : <Sparkles className="h-5 w-5" />}</button>
+    <button onClick={() => setOpen((value) => !value)} className="ml-auto flex h-13 w-13 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-lg hover:bg-indigo-700 lg:hidden" aria-label={open ? t("opero.close") : t("opero.open")}>{open ? <X className="h-5 w-5" /> : <Sparkles className="h-5 w-5" />}</button>
   </div>;
 }
