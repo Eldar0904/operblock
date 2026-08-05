@@ -133,6 +133,17 @@ export function canManageTask(
   return !project.isPersonal && project.createdByUserId === userId;
 }
 
+/** Daily tasks may also be changed by their current assignee. */
+export function canUpdateTask(
+  userId: string | null | undefined,
+  task: { createdByUserId: string | null },
+  project: { isPersonal: boolean; createdByUserId: string | null },
+  assigneeIds: string[],
+): boolean {
+  return canManageTask(userId, task, project) ||
+    (project.isPersonal && canMutateDailyTask(userId, assigneeIds));
+}
+
 export function applyCompletedAtUpdate(
   updates: Record<string, unknown>,
   nextStatus: string,

@@ -4,7 +4,7 @@ import { getDb, isDbConfigured, schema } from "../db/index.js";
 import { getClerkUserId, requireClerkAuth } from "../middleware/auth.js";
 import {
   applyCompletedAtUpdate,
-  canManageTask,
+  canUpdateTask,
   canMutateDailyTask,
   getAssigneeIdsForTask,
   getTaskProjectContext,
@@ -90,7 +90,12 @@ async function workspaceContext(db: ReturnType<typeof getDb>, userId: string) {
       dueDate: task.dueDate?.toISOString() ?? null,
       assigneeUserIds: assigneesByTask.get(task.id) ?? (task.assigneeUserId ? [task.assigneeUserId] : []),
       createdByUserId: task.createdByUserId,
-      editable: task.createdByUserId === userId,
+      editable: canUpdateTask(
+        userId,
+        task,
+        project,
+        assigneesByTask.get(task.id) ?? (task.assigneeUserId ? [task.assigneeUserId] : []),
+      ),
     })),
   };
 }
@@ -300,8 +305,8 @@ async function executeAction(db: ReturnType<typeof getDb>, action: OperoAction, 
   const id = typeof data.id === "string" ? data.id : "";
   const context = await getTaskProjectContext(db, id);
   if (!context || !canViewProject(context.project, userId)) throw new Error("Task not found or unavailable");
-  if (!canManageTask(userId, context.task, context.project)) throw new Error("Only the task creator or project owner can change this task");
   const currentAssignees = await getAssigneeIdsForTask(db, id);
+  if (!canUpdateTask(userId, context.task, context.project, currentAssignees)) throw new Error("Only the task creator, project owner, or Daily assignee can change this task");
   if (context.project.isPersonal && !canMutateDailyTask(userId, currentAssignees)) throw new Error("You cannot change this Daily task");
   if (action.type === "delete_task") {
     await db.delete(schema.tasks).where(eq(schema.tasks.id, id));

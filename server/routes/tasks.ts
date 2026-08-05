@@ -5,6 +5,7 @@ import { getClerkUserId, requireClerkAuth } from "../middleware/auth.js";
 import {
   applyCompletedAtUpdate,
   canManageTask,
+  canUpdateTask,
   canMutateDailyTask,
   getAssigneeIdsForTask,
   getTaskProjectContext,
@@ -216,8 +217,8 @@ router.patch("/:id", async (req, res) => {
     }
 
     const currentAssignees = await getAssigneeIdsForTask(db, req.params.id);
-    if (!canManageTask(userId, ctx.task, ctx.project)) {
-      return res.status(403).json({ error: "Only the task creator or project owner can edit this task" });
+    if (!canUpdateTask(userId, ctx.task, ctx.project, currentAssignees)) {
+      return res.status(403).json({ error: "Only the task creator, project owner, or Daily assignee can edit this task" });
     }
     if (ctx.project.isPersonal && !canMutateDailyTask(userId, currentAssignees)) {
       return res.status(403).json({ error: "You can only edit tasks on your own Daily tab" });
