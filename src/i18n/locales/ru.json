@@ -91,6 +91,8 @@
     "deleteProjectConfirm": "Удалить проект «{{name}}» и все его задачи? Это нельзя отменить.",
     "deleteForbidden": "Удалить проект может только его создатель.",
     "editForbidden": "Редактировать проект может только его создатель.",
+    "renameProject": "Переименовать",
+    "renamePrompt": "Новое название проекта",
     "pauseProject": "Приостановить",
     "cancelProject": "Отменить",
     "reopenProject": "Возобновить",

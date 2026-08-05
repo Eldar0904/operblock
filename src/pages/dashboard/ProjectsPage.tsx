@@ -1,5 +1,5 @@
 ﻿import { useEffect, useMemo, useState } from "react";
-import { Plus, Search, Trash2, Lock, Unlock } from "lucide-react";
+import { Pencil, Plus, Search, Trash2, Lock, Unlock } from "lucide-react";
 import {
   useSearchParams,
   useLocation,
@@ -239,6 +239,24 @@ export default function ProjectsPage() {
     updateProject.mutate({ id: activeProject.id, isPrivate: !activeProject.isPrivate });
   };
 
+  const renameProject = () => {
+    if (!activeProject || isDailyRoute || !canManageProject) return;
+    const name = window.prompt(t("projects.renamePrompt"), activeProject.name)?.trim();
+    if (!name || name === activeProject.name) return;
+    updateProject.mutate(
+      { id: activeProject.id, name },
+      {
+        onError: (err) => {
+          if (err instanceof ApiError && err.status === 403) {
+            showToast(t("projects.editForbidden"), "error");
+            return;
+          }
+          showToast(t("tasks.somethingWrong"), "error");
+        },
+      },
+    );
+  };
+
   const isSubmitting = createTask.isPending || updateTask.isPending || isUploadingAttachments;
   const pageLoading = isDailyRoute
     ? dailyLoading || isLoading
@@ -323,6 +341,15 @@ export default function ProjectsPage() {
           <MembersDropdown />
           {!isDailyRoute && activeProject && canManageProject && (
             <>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={renameProject}
+                disabled={updateProject.isPending}
+              >
+                <Pencil className="h-3.5 w-3.5" />
+                {t("projects.renameProject")}
+              </Button>
               <Button
                 size="sm"
                 variant="outline"

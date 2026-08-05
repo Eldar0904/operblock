@@ -4,6 +4,7 @@ import { getDb, isDbConfigured, schema } from "../db/index.js";
 import { getClerkUserId, requireClerkAuth } from "../middleware/auth.js";
 import {
   applyCompletedAtUpdate,
+  canManageTask,
   canMutateDailyTask,
   getAssigneeIdsForTask,
   getTaskProjectContext,
@@ -215,8 +216,8 @@ router.patch("/:id", async (req, res) => {
     }
 
     const currentAssignees = await getAssigneeIdsForTask(db, req.params.id);
-    if (!userId || ctx.task.createdByUserId !== userId) {
-      return res.status(403).json({ error: "Only the task creator can edit this task" });
+    if (!canManageTask(userId, ctx.task, ctx.project)) {
+      return res.status(403).json({ error: "Only the task creator or project owner can edit this task" });
     }
     if (ctx.project.isPersonal && !canMutateDailyTask(userId, currentAssignees)) {
       return res.status(403).json({ error: "You can only edit tasks on your own Daily tab" });
@@ -281,8 +282,8 @@ router.delete("/:id", async (req, res) => {
     }
 
     const assignees = await getAssigneeIdsForTask(db, req.params.id);
-    if (!userId || ctx.task.createdByUserId !== userId) {
-      return res.status(403).json({ error: "Only the task creator can delete this task" });
+    if (!canManageTask(userId, ctx.task, ctx.project)) {
+      return res.status(403).json({ error: "Only the task creator or project owner can delete this task" });
     }
     if (ctx.project.isPersonal && !canMutateDailyTask(userId, assignees)) {
       return res.status(403).json({ error: "You can only delete tasks on your own Daily tab" });

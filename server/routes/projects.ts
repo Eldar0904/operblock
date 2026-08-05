@@ -9,6 +9,10 @@ router.use(requireClerkAuth);
 
 const DAILY_PROJECT_NAME = "Daily";
 
+function canManageProject(createdByUserId: string | null, userId: string | null): boolean {
+  return Boolean(userId && (!createdByUserId || createdByUserId === userId));
+}
+
 async function ensureOrgId(
   db: ReturnType<typeof getDb>,
   orgId?: string,
@@ -213,17 +217,23 @@ router.patch("/:id", async (req, res) => {
     }
 
     const userId = getClerkUserId(req);
-    if (!userId || existing.createdByUserId !== userId) {
+    if (!canManageProject(existing.createdByUserId, userId)) {
       return res.status(403).json({ error: "Only the project creator can edit this project" });
     }
 
     const updates: {
       name?: string;
+      createdByUserId?: string;
       portfolioId?: string | null;
       status?: "active" | "paused" | "canceled";
       statusChangedAt?: Date | null;
       isPrivate?: boolean;
     } = {};
+    // Projects created before ownership tracking have no creator. The first
+    // authenticated user to manage one becomes its recorded owner.
+    if (!existing.createdByUserId && userId) {
+      updates.createdByUserId = userId;
+    }
     if (name !== undefined) {
       updates.name = name.trim();
     }
@@ -290,7 +300,7 @@ router.delete("/:id", async (req, res) => {
     }
 
     const userId = getClerkUserId(req);
-    if (!userId || existing.createdByUserId !== userId) {
+    if (!canManageProject(existing.createdByUserId, userId)) {
       return res.status(403).json({ error: "Only the project creator can delete this project" });
     }
 

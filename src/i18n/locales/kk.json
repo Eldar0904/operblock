@@ -91,6 +91,8 @@
     "deleteProjectConfirm": "«{{name}}» жобасын және барлық тапсырмаларды жою керек пе? Бұл әрекетті қайтару мүмкін емес.",
     "deleteForbidden": "Жобаны тек оны жасаған адам жоя алады.",
     "editForbidden": "Жобаны тек оны жасаған адам өңдей алады.",
+    "renameProject": "Атын өзгерту",
+    "renamePrompt": "Жобаның жаңа атауы",
     "pauseProject": "Кідірту",
     "cancelProject": "Болдырмау",
     "reopenProject": "Қайта бастау",

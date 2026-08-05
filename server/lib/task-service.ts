@@ -123,6 +123,16 @@ export function canMutateDailyTask(
   return assigneeIds.includes(userId);
 }
 
+export function canManageTask(
+  userId: string | null | undefined,
+  task: { createdByUserId: string | null },
+  project: { isPersonal: boolean; createdByUserId: string | null },
+): boolean {
+  if (!userId) return false;
+  if (task.createdByUserId === userId) return true;
+  return !project.isPersonal && project.createdByUserId === userId;
+}
+
 export function applyCompletedAtUpdate(
   updates: Record<string, unknown>,
   nextStatus: string,
