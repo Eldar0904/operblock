@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Pencil, Plus, Target, Trash2, X } from "lucide-react";
 import { UserButton } from "@clerk/clerk-react";
@@ -121,8 +121,8 @@ export default function GoalsPage() {
       <div className="flex-1 overflow-auto p-6">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="rounded-full bg-indigo-50 p-2">
-              <Target className="h-5 w-5 text-indigo-600" />
+            <div className="rounded-full bg-primary/10 p-2">
+              <Target className="h-5 w-5 text-primary" />
             </div>
             <div>
               <p className="text-sm text-muted-foreground">{t("goals.subtitle")}</p>
@@ -131,11 +131,11 @@ export default function GoalsPage() {
           <div className="flex items-center gap-3">
             <Link
               to="/dashboard/reports"
-              className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
+              className="text-sm font-medium text-primary hover:text-primary"
             >
               {t("goals.viewReports")}
             </Link>
-            <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700" onClick={openCreate}>
+            <Button size="sm" className="bg-primary hover:bg-primary/90" onClick={openCreate}>
               <Plus className="h-3.5 w-3.5" />
               {t("goals.addGoal")}
             </Button>
@@ -148,14 +148,14 @@ export default function GoalsPage() {
           <p className="text-sm text-red-600">{t("goals.loadError")}</p>
         ) : goals.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="mb-4 rounded-full bg-indigo-50 p-4">
-              <Target className="h-8 w-8 text-indigo-600" />
+            <div className="mb-4 rounded-full bg-primary/10 p-4">
+              <Target className="h-8 w-8 text-primary" />
             </div>
             <h3 className="text-base font-semibold">{t("goals.empty")}</h3>
             <p className="mt-2 max-w-sm text-sm text-muted-foreground">{t("goals.emptyDesc")}</p>
             <Button
               size="sm"
-              className="mt-4 bg-indigo-600 hover:bg-indigo-700"
+              className="mt-4 bg-primary hover:bg-primary/90"
               onClick={openCreate}
             >
               <Plus className="h-3.5 w-3.5" />
@@ -197,7 +197,7 @@ export default function GoalsPage() {
 
                 <div className="mb-2 h-2 overflow-hidden rounded-full bg-muted">
                   <div
-                    className="h-full rounded-full bg-indigo-500 transition-all"
+                    className="h-full rounded-full bg-primary transition-all"
                     style={{ width: `${goal.progressPercent}%` }}
                   />
                 </div>
@@ -280,7 +280,7 @@ export default function GoalsPage() {
                           key={project.id}
                           className={cn(
                             "flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-muted/50",
-                            checked && "bg-indigo-50",
+                            checked && "bg-primary/10",
                           )}
                         >
                           <input
@@ -304,7 +304,7 @@ export default function GoalsPage() {
                 <Button
                   type="submit"
                   disabled={isSubmitting || !form.title.trim()}
-                  className="bg-indigo-600 hover:bg-indigo-700"
+                  className="bg-primary hover:bg-primary/90"
                 >
                   {isSubmitting
                     ? t("tasks.saving")

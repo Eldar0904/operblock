@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+﻿import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
@@ -57,7 +57,7 @@ export function MomentumDashboard({
     <div className="space-y-8">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <div className="mb-1 flex items-center gap-2 text-indigo-600">
+          <div className="mb-1 flex items-center gap-2 text-primary">
             <Sparkles className="h-4 w-4" />
             <span className="text-xs font-semibold uppercase tracking-wide">
               {t("momentum.eyebrow")}
@@ -68,14 +68,14 @@ export function MomentumDashboard({
         </div>
         <Link
           to="/dashboard/reports"
-          className="inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-700"
+          className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:text-primary"
         >
           {t("momentum.viewReports")}
           <ArrowRight className="h-3.5 w-3.5" />
         </Link>
       </div>
 
-      <section className="rounded-xl border border-indigo-100 bg-gradient-to-br from-indigo-50/80 to-white p-5">
+      <section className="rounded-xl border border-primary/15 bg-gradient-to-br from-primary/10 to-white p-5">
         <h3 className="mb-4 text-sm font-semibold">{t("momentum.weekWins")}</h3>
         {reportsLoading ? (
           <p className="text-sm text-muted-foreground">{t("momentum.loadingWins")}</p>
@@ -216,7 +216,7 @@ function HealthPanel({
         </div>
         <Link
           to={ctaTo}
-          className="shrink-0 text-xs font-medium text-indigo-600 hover:text-indigo-700"
+          className="shrink-0 text-xs font-medium text-primary hover:text-primary"
         >
           {ctaLabel}
         </Link>

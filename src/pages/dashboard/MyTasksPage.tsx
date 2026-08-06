@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+﻿import { useMemo, useState } from "react";
 import { Plus, Search } from "lucide-react";
 import { useAuth, UserButton } from "@clerk/clerk-react";
 import { useTranslation } from "react-i18next";
@@ -147,7 +147,7 @@ export default function MyTasksPage() {
           <PriorityFilter value={priorityFilter} onChange={setPriorityFilter} />
           <Button
             size="sm"
-            className="bg-indigo-600 hover:bg-indigo-700"
+            className="bg-primary hover:bg-primary/90"
             disabled={!dailyProject}
             onClick={() => {
               setEditingTask(null);

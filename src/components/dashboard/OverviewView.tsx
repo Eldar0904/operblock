@@ -1,4 +1,4 @@
-import { CheckCircle2, Clock, AlertTriangle, Layers } from "lucide-react";
+﻿import { CheckCircle2, Clock, AlertTriangle, Layers } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import type { ApiTask } from "@/lib/mock-data";
@@ -28,7 +28,7 @@ export function OverviewView({ tasks, title }: OverviewViewProps) {
           icon={Layers}
           label={t("overview.totalTasks")}
           value={stats.total}
-          color="text-indigo-600 bg-indigo-50"
+          color="text-primary bg-primary/10"
         />
         <StatCard
           icon={CheckCircle2}
@@ -60,7 +60,7 @@ export function OverviewView({ tasks, title }: OverviewViewProps) {
               <div className="flex-1">
                 <div className="h-2 overflow-hidden rounded-full bg-muted">
                   <div
-                    className="h-full rounded-full bg-indigo-500 transition-all"
+                    className="h-full rounded-full bg-primary transition-all"
                     style={{
                       width: stats.total > 0 ? `${(col.count / stats.total) * 100}%` : "0%",
                     }}

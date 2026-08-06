@@ -1,4 +1,4 @@
-import { ExternalLink } from "lucide-react";
+﻿import { ExternalLink } from "lucide-react";
 import { useUser, UserButton } from "@clerk/clerk-react";
 import { useTranslation } from "react-i18next";
 import { NotificationsDropdown } from "@/components/dashboard/NotificationsDropdown";
@@ -15,7 +15,7 @@ export default function SettingsPage() {
     user?.lastName,
     user?.primaryEmailAddress?.emailAddress,
   );
-  const color = user?.id ? avatarColorForUserId(user.id) : "bg-indigo-400";
+  const color = user?.id ? avatarColorForUserId(user.id) : "bg-primary";
 
   return (
     <>
@@ -50,7 +50,7 @@ export default function SettingsPage() {
                     {user.primaryEmailAddress?.emailAddress}
                   </p>
                   <p className="mt-1 font-mono text-xs text-muted-foreground">
-                    ID: {user.id.slice(0, 12)}…
+                    ID: {user.id.slice(0, 12)}вЂ¦
                   </p>
                 </div>
               </div>
@@ -70,7 +70,7 @@ export default function SettingsPage() {
               href="https://accounts.clerk.com/user"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-700"
+              className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:text-primary"
             >
               {t("settings.openPortal")}
               <ExternalLink className="h-3.5 w-3.5" />

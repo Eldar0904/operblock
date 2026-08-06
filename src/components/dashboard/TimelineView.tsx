@@ -1,4 +1,4 @@
-import { Calendar } from "lucide-react";
+﻿import { Calendar } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { ApiTask } from "@/lib/mock-data";
 import { formatTicketId, groupByDueDate, isOverdue, statusLabel } from "@/lib/task-utils";
@@ -30,13 +30,13 @@ export function TimelineView({ tasks, onEdit }: TimelineViewProps) {
         return (
           <div key={dueLabel}>
             <div className="mb-3 flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-indigo-600" />
+              <Calendar className="h-4 w-4 text-primary" />
               <h3 className="text-sm font-semibold">{displayLabel}</h3>
               <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
                 {groupTasks.length}
               </span>
             </div>
-            <div className="space-y-2 border-l-2 border-indigo-100 pl-4">
+            <div className="space-y-2 border-l-2 border-primary/15 pl-4">
               {groupTasks.map((task) => (
                 <button
                   key={task.id}

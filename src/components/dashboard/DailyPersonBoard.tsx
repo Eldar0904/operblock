@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import { Calendar, Layers, Pencil, Plus, Trash2, UserRound } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -335,7 +335,7 @@ export function DailyPersonBoard({
     <section
       className={cn(
         "space-y-2 rounded-md p-1 transition-colors lg:min-h-0 lg:overflow-y-auto",
-        dropTarget === column && draggingTaskId && "bg-indigo-50 ring-2 ring-indigo-200",
+        dropTarget === column && draggingTaskId && "bg-primary/10 ring-2 ring-primary/25",
       )}
       onDragOver={(e) => {
         e.preventDefault();
@@ -370,7 +370,7 @@ export function DailyPersonBoard({
     <section
       className={cn(
         "space-y-2 rounded-md p-1 transition-colors lg:min-h-0 lg:overflow-y-auto",
-        reopenDrop && dropTarget === "open" && draggingTaskId && "bg-indigo-50 ring-2 ring-indigo-200",
+        reopenDrop && dropTarget === "open" && draggingTaskId && "bg-primary/10 ring-2 ring-primary/25",
       )}
       onDragOver={
         reopenDrop
@@ -442,7 +442,7 @@ export function DailyPersonBoard({
               className={cn(
                 "flex shrink-0 items-center gap-2 border-b-2 px-3 py-2 text-sm transition-colors",
                 isActive
-                  ? "border-indigo-600 font-medium text-indigo-700"
+                  ? "border-primary font-medium text-primary"
                   : "border-transparent text-muted-foreground hover:text-foreground",
               )}
             >
@@ -465,7 +465,7 @@ export function DailyPersonBoard({
               <span
                 className={cn(
                   "rounded-full px-1.5 py-0.5 text-[10px] font-medium",
-                  isActive ? "bg-indigo-100 text-indigo-700" : "bg-muted text-muted-foreground",
+                  isActive ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground",
                 )}
               >
                 {count}
@@ -490,7 +490,7 @@ export function DailyPersonBoard({
           {canAdd && (
             <Button
               size="sm"
-              className="bg-indigo-600 hover:bg-indigo-700"
+              className="bg-primary hover:bg-primary/90"
               onClick={() => onAddToColumn(activeTab.assigneeUserId)}
             >
               <Plus className="h-3.5 w-3.5" />

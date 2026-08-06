@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { UserButton } from "@clerk/clerk-react";
 import { BarChart3 } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -21,7 +21,7 @@ export default function ReportsPage() {
     <>
       <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-background px-6">
         <div className="flex items-center gap-2">
-          <BarChart3 className="h-4 w-4 text-indigo-600" />
+          <BarChart3 className="h-4 w-4 text-primary" />
           <div>
             <p className="text-xs text-muted-foreground">{t("reports.subtitle")}</p>
             <h1 className="text-base font-semibold">{t("reports.title")}</h1>

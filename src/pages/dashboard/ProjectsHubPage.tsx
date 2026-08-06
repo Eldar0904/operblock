@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+﻿import { useMemo, useState } from "react";
 import { AlertTriangle, CheckCircle2, FolderKanban, Layers, Lock, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth, UserButton } from "@clerk/clerk-react";
@@ -105,7 +105,7 @@ export default function ProjectsHubPage() {
         ) : cards.length === 0 ? (
           <div className="flex flex-1 items-center justify-center py-16">
             <div className="w-full max-w-md rounded-lg border border-border bg-background p-6 text-center">
-              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-indigo-50 text-indigo-600">
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
                 <FolderKanban className="h-6 w-6" />
               </div>
               <h2 className="text-base font-semibold">{t("projects.noProjectTitle")}</h2>
@@ -121,7 +121,7 @@ export default function ProjectsHubPage() {
                 <Button
                   type="submit"
                   size="sm"
-                  className="bg-indigo-600 hover:bg-indigo-700"
+                  className="bg-primary hover:bg-primary/90"
                   disabled={createProject.isPending || !newProjectName.trim()}
                 >
                   <Plus className="h-3.5 w-3.5" />
@@ -146,7 +146,7 @@ export default function ProjectsHubPage() {
                 <Button
                   type="submit"
                   size="sm"
-                  className="bg-indigo-600 hover:bg-indigo-700"
+                  className="bg-primary hover:bg-primary/90"
                   disabled={createProject.isPending || !newProjectName.trim()}
                 >
                   <Plus className="h-3.5 w-3.5" />
@@ -161,10 +161,10 @@ export default function ProjectsHubPage() {
                   key={project.id}
                   type="button"
                   onClick={() => openProject(project.id, canOpen)}
-                  className="rounded-lg border border-border bg-background p-5 text-left transition-colors hover:border-indigo-200 hover:bg-indigo-50/40"
+                  className="rounded-lg border border-border bg-background p-5 text-left transition-colors hover:border-primary/25 hover:bg-primary/10/40"
                 >
                   <div className="mb-3 flex items-start gap-3">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-indigo-50 text-indigo-600">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
                       {project.isPrivate ? (
                         <Lock className="h-4 w-4" />
                       ) : (

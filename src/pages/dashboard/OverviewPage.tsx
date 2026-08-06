@@ -1,4 +1,4 @@
-import { useUser, UserButton } from "@clerk/clerk-react";
+﻿import { useUser, UserButton } from "@clerk/clerk-react";
 import { useEffect, useState } from "react";
 import { CheckCircle2, Plus } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -115,11 +115,11 @@ export default function OverviewPage() {
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
                   <h2 className="mt-1 text-xl font-semibold tracking-tight">{t(`overview.greeting.${period}`, { name })}</h2>
-                  <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-indigo-600">{t("overview.myWorkEyebrow")}</p>
+                  <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-primary">{t("overview.myWorkEyebrow")}</p>
                 </div>
                 <Button
                   size="sm"
-                  className="bg-indigo-600 hover:bg-indigo-700"
+                  className="bg-primary hover:bg-primary/90"
                   onClick={() => setAddTaskOpen(true)}
                 >
                   <Plus className="h-3.5 w-3.5" />

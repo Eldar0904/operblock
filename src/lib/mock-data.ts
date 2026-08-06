@@ -1,4 +1,4 @@
-export type TaskStatus =
+﻿export type TaskStatus =
   | "backlog"
   | "todo"
   | "in_progress"
@@ -127,7 +127,7 @@ export const MOCK_TASKS: ApiTask[] = [
     priority: "high",
     dueDate: "Jul 22",
     tag: "Engineering",
-    tagColor: "bg-indigo-100 text-indigo-700",
+    tagColor: "bg-primary/15 text-primary",
     comments: 8,
     assignee: { initials: "JL", color: "bg-blue-400" },
   },

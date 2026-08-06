@@ -325,7 +325,7 @@ export default function ProjectsPage() {
                 className={cn(
                   "border-b-2 px-3 py-3 text-sm font-medium transition-colors",
                   activeView === tab
-                    ? "border-indigo-600 text-indigo-600"
+                    ? "border-primary text-primary"
                     : "border-transparent text-muted-foreground hover:text-foreground",
                 )}
               >
@@ -414,7 +414,7 @@ export default function ProjectsPage() {
           )}
           <Button
             size="sm"
-            className="bg-indigo-600 hover:bg-indigo-700"
+            className="bg-primary hover:bg-primary/90"
             onClick={() => openAddModal()}
             disabled={!activeProject}
           >

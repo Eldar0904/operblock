@@ -1,4 +1,4 @@
-import { RotateCcw } from "lucide-react";
+﻿import { RotateCcw } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
@@ -57,7 +57,7 @@ export function ReportsView({
                 className={cn(
                   "rounded px-3 py-1.5 text-xs font-medium transition-colors",
                   period === p
-                    ? "bg-indigo-600 text-white"
+                    ? "bg-primary text-white"
                     : "text-muted-foreground hover:text-foreground",
                 )}
               >
@@ -124,7 +124,7 @@ export function ReportsView({
                     </td>
                     <td className="px-5 py-2.5 font-medium">{task.title}</td>
                     <td className="px-5 py-2.5">
-                      {task.priority ? priorityLabel(task.priority) : "—"}
+                      {task.priority ? priorityLabel(task.priority) : "вЂ”"}
                     </td>
                     <td className="px-5 py-2.5 text-muted-foreground">
                       {formatCompletedDate(task.completedAt ?? undefined)}
@@ -191,7 +191,7 @@ function CompletionBuckets({
             >
               <span className="text-xs font-medium">{bucket.count}</span>
               <span className="flex h-32 w-full items-end">
-                <span className={cn("w-full rounded-t bg-indigo-500 transition-colors", isSelected && "bg-indigo-700")} style={{ height: `${height}%` }} />
+                <span className={cn("w-full rounded-t bg-primary transition-colors", isSelected && "bg-primary/90")} style={{ height: `${height}%` }} />
               </span>
               <span className="truncate text-[10px] text-muted-foreground">{bucket.label}</span>
             </button>
@@ -251,4 +251,3 @@ function startOfDay(value: Date) {
 function dateKey(value: Date) {
   return `${value.getFullYear()}-${value.getMonth()}-${value.getDate()}`;
 }
-

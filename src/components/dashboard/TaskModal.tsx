@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from "react";
+﻿import { useEffect, useId, useRef, useState } from "react";
 import { Download, Paperclip, Trash2, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -394,7 +394,7 @@ export function TaskModal({
               <Button
                 type="submit"
                 disabled={isSubmitting || !form.title.trim()}
-                className={cn("bg-indigo-600 hover:bg-indigo-700")}
+                className={cn("bg-primary hover:bg-primary/90")}
               >
                 {isSubmitting ? t("tasks.saving") : task ? t("tasks.saveChanges") : t("tasks.createTask")}
               </Button>
@@ -449,7 +449,7 @@ export function TaskModal({
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-medium">{file.fileName}</p>
                         <p className="text-[10px] text-muted-foreground">
-                          {formatFileSize(file.sizeBytes)} · {new Date(file.createdAt).toLocaleString()}
+                          {formatFileSize(file.sizeBytes)} В· {new Date(file.createdAt).toLocaleString()}
                         </p>
                       </div>
                       <div className="flex shrink-0 items-center gap-0.5">
@@ -570,7 +570,7 @@ export function TaskModal({
                 type="submit"
                 size="sm"
                 disabled={!commentText.trim() || createComment.isPending}
-                className="bg-indigo-600 hover:bg-indigo-700"
+                className="bg-primary hover:bg-primary/90"
               >
                 {t("comments.addComment")}
               </Button>

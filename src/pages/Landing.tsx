@@ -1,8 +1,9 @@
-import { Link } from "react-router-dom";
+﻿import { Link } from "react-router-dom";
 import { ArrowRight, CheckCircle2, Circle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { PineLogo } from "@/components/PineLogo";
 
 export default function Landing() {
   const { t } = useTranslation();
@@ -10,7 +11,7 @@ export default function Landing() {
   const previewColumns = [
     {
       title: t("landing.previewTodo"),
-      color: "bg-slate-100",
+      color: "bg-muted",
       tasks: [
         { title: t("previewTasks.designAudit"), tag: t("tags.design"), done: false, active: false },
         { title: t("previewTasks.updateCopy"), tag: t("tags.marketing"), done: false, active: false },
@@ -18,14 +19,14 @@ export default function Landing() {
     },
     {
       title: t("landing.previewInProgress"),
-      color: "bg-indigo-50",
+      color: "bg-primary/10",
       tasks: [
         { title: t("previewTasks.buildKanban"), tag: t("tags.engineering"), done: false, active: true },
       ],
     },
     {
       title: t("landing.previewDone"),
-      color: "bg-emerald-50",
+      color: "bg-secondary/30",
       tasks: [
         { title: t("previewTasks.kickoff"), tag: t("tags.planning"), done: true, active: false },
       ],
@@ -39,12 +40,11 @@ export default function Landing() {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen overflow-hidden bg-background">
       <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-sm">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-          <Link to="/" className="flex flex-col leading-tight">
-            <span className="text-lg font-semibold tracking-tight">{t("company")}</span>
-            <span className="text-xs font-medium text-muted-foreground">{t("brand")}</span>
+          <Link to="/" className="flex items-center" aria-label="PINE home">
+            <PineLogo className="h-9" />
           </Link>
           <nav className="flex items-center gap-3">
             <LanguageSwitcher variant="buttons" />
@@ -62,9 +62,11 @@ export default function Landing() {
       </header>
 
       <main>
-        <section className="mx-auto max-w-6xl px-6 pb-20 pt-24">
+        <section className="relative mx-auto max-w-6xl px-6 pb-20 pt-24">
+          <div className="pine-pattern pointer-events-none absolute -right-48 -top-24 h-[520px] w-[520px] rounded-full opacity-70 [mask-image:radial-gradient(circle,black,transparent_72%)]" />
           <div className="mx-auto max-w-3xl text-center">
-            <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl lg:text-6xl">
+            <div className="mx-auto mb-5 h-1 w-16 rounded-full bg-secondary" />
+            <h1 className="brand-heading text-4xl font-bold tracking-tight text-foreground sm:text-5xl lg:text-6xl">
               {t("landing.heroTitle")}
             </h1>
             <p className="mx-auto mt-6 max-w-xl text-lg text-muted-foreground">
@@ -106,12 +108,12 @@ export default function Landing() {
                           <div
                             key={task.title}
                             className={`rounded-md border bg-background p-3 shadow-sm ${
-                              task.active ? "border-indigo-200 ring-1 ring-indigo-100" : "border-border"
+                              task.active ? "border-primary/30 ring-1 ring-primary/20" : "border-border"
                             }`}
                           >
                             <div className="flex items-start gap-2">
                               {task.done ? (
-                                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
+                                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
                               ) : (
                                 <Circle className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
                               )}
@@ -133,13 +135,13 @@ export default function Landing() {
           </div>
         </section>
 
-        <section className="border-t border-border bg-muted/30 py-20">
+        <section className="border-t border-primary bg-primary py-20 text-primary-foreground">
           <div className="mx-auto max-w-6xl px-6">
             <div className="grid gap-8 sm:grid-cols-3">
               {features.map((feature) => (
-                <div key={feature.title} className="rounded-xl border border-border bg-card p-6">
+                <div key={feature.title} className="rounded-xl border border-white/15 bg-white/10 p-6 backdrop-blur-sm">
                   <h3 className="font-semibold">{feature.title}</h3>
-                  <p className="mt-2 text-sm text-muted-foreground">{feature.description}</p>
+                  <p className="mt-2 text-sm text-white/75">{feature.description}</p>
                 </div>
               ))}
             </div>
@@ -149,7 +151,7 @@ export default function Landing() {
 
       <footer className="border-t border-border py-8">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 text-sm text-muted-foreground">
-          <span>© {new Date().getFullYear()} {t("company")}</span>
+          <span>В© {new Date().getFullYear()} {t("company")}</span>
           <span>Built for high-performance teams.</span>
         </div>
       </footer>

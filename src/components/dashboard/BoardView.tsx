@@ -1,4 +1,4 @@
-import { Plus } from "lucide-react";
+﻿import { Plus } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import type { ApiTask, TaskStatus } from "@/lib/mock-data";
@@ -59,7 +59,7 @@ export function BoardView({
           <div
             className={cn(
               "flex-1 space-y-3 overflow-y-auto rounded-md bg-muted/40 p-2 transition-colors",
-              dropTarget === column.id && "bg-indigo-50 ring-2 ring-indigo-200",
+              dropTarget === column.id && "bg-primary/10 ring-2 ring-primary/25",
             )}
             onDragOver={(e) => {
               e.preventDefault();

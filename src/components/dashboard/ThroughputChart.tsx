@@ -1,4 +1,4 @@
-import { useTranslation } from "react-i18next";
+﻿import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 
 interface ThroughputChartProps {
@@ -27,7 +27,7 @@ export function ThroughputChart({ data }: ThroughputChartProps) {
             <div className="flex w-full flex-1 items-end">
               <div
                 className={cn(
-                  "w-full rounded-t-md bg-indigo-500 transition-all",
+                  "w-full rounded-t-md bg-primary transition-all",
                   item.count === 0 && "bg-muted",
                 )}
                 style={{

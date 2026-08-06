@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import {
   BarChart3,
   Building2,
@@ -8,7 +8,6 @@ import {
   Folder,
   FolderKanban,
   LayoutDashboard,
-  LayoutGrid,
   Lock,
   MoreHorizontal,
   Pencil,
@@ -39,6 +38,7 @@ import type { ApiPortfolio, ApiProject } from "@/lib/mock-data";
 import { canAccessProjectContents } from "@/lib/project-access";
 import { useToast } from "@/components/ui/toast";
 import AIAssistant from "@/components/dashboard/AIAssistant";
+import { PineLogo } from "@/components/PineLogo";
 
 const ACTIVE_PROJECT_KEY = "operblock-active-project";
 const COLLAPSED_PORTFOLIOS_KEY = "operblock-collapsed-portfolios";
@@ -266,7 +266,7 @@ export default function DashboardLayout() {
     cn(
       "flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
       isActive
-        ? "bg-indigo-50 font-medium text-indigo-700"
+        ? "bg-primary/10 font-medium text-primary"
         : "text-sidebar-foreground hover:bg-sidebar-accent",
     );
 
@@ -281,7 +281,7 @@ export default function DashboardLayout() {
         className={cn(
           "flex w-full items-center gap-2 rounded-md py-1.5 pl-3 pr-7 text-left text-sm transition-colors",
           highlightedProjectId === project.id
-            ? "bg-indigo-50 font-medium text-indigo-700"
+            ? "bg-primary/10 font-medium text-primary"
             : "text-sidebar-foreground hover:bg-sidebar-accent",
           locked && "opacity-80",
         )}
@@ -320,7 +320,7 @@ export default function DashboardLayout() {
             onClick={() => handleMoveProject(project.id, null)}
             className={cn(
               "flex w-full rounded px-2 py-1.5 text-left text-xs hover:bg-sidebar-accent",
-              !project.portfolioId && "font-medium text-indigo-700",
+              !project.portfolioId && "font-medium text-primary",
             )}
           >
             {t("portfolios.ungrouped")}
@@ -332,7 +332,7 @@ export default function DashboardLayout() {
               onClick={() => handleMoveProject(project.id, portfolio.id)}
               className={cn(
                 "flex w-full rounded px-2 py-1.5 text-left text-xs hover:bg-sidebar-accent",
-                project.portfolioId === portfolio.id && "font-medium text-indigo-700",
+                project.portfolioId === portfolio.id && "font-medium text-primary",
               )}
             >
               {portfolio.name}
@@ -376,7 +376,7 @@ export default function DashboardLayout() {
               <button
                 type="submit"
                 disabled={updatePortfolio.isPending || !renameValue.trim()}
-                className="h-7 rounded bg-indigo-600 px-1.5 text-[10px] font-medium text-white disabled:opacity-50"
+                className="h-7 rounded bg-primary px-1.5 text-[10px] font-medium text-white disabled:opacity-50"
               >
                 {t("common.save")}
               </button>
@@ -448,14 +448,12 @@ export default function DashboardLayout() {
   };
 
   return (
-    <div className="flex h-screen bg-[#F4F5F7]">
+    <div className="flex h-screen bg-background">
       <aside className="flex w-[260px] shrink-0 flex-col border-r border-sidebar-border bg-sidebar">
         <div className="flex h-14 items-center gap-2 border-b border-sidebar-border px-4">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-indigo-600 text-white">
-              <LayoutGrid className="h-3.5 w-3.5" />
-            </div>
-            <span className="font-semibold text-sidebar-foreground">{t("brand")}</span>
+          <Link to="/" className="flex items-center gap-3" aria-label="PINE home">
+            <PineLogo className="h-7 max-w-[112px]" />
+            <span className="border-l border-sidebar-border pl-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">{t("brand")}</span>
           </Link>
         </div>
 
@@ -486,7 +484,7 @@ export default function DashboardLayout() {
             onClick={() => setOperoOpen((value) => !value)}
             className="mt-2 flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sidebar-foreground transition-colors hover:bg-sidebar-accent"
           >
-            <div className="flex h-4 w-4 shrink-0 items-center justify-center rounded bg-sidebar-accent text-indigo-700">
+            <div className="flex h-4 w-4 shrink-0 items-center justify-center rounded bg-sidebar-accent text-primary">
               <Sparkles className="h-3 w-3" />
             </div>
             <div className="min-w-0 flex-1">
@@ -538,7 +536,7 @@ export default function DashboardLayout() {
                   <button
                     type="submit"
                     disabled={createPortfolio.isPending || !newPortfolioName.trim()}
-                    className="h-7 flex-1 rounded-md bg-indigo-600 text-xs font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+                    className="h-7 flex-1 rounded-md bg-primary text-xs font-medium text-white hover:bg-primary/90 disabled:opacity-50"
                   >
                     {t("portfolios.create")}
                   </button>
@@ -581,7 +579,7 @@ export default function DashboardLayout() {
                   <button
                     type="submit"
                     disabled={createProject.isPending || !newProjectName.trim()}
-                    className="h-7 flex-1 rounded-md bg-indigo-600 text-xs font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+                    className="h-7 flex-1 rounded-md bg-primary text-xs font-medium text-white hover:bg-primary/90 disabled:opacity-50"
                   >
                     {t("projects.createProject")}
                   </button>
@@ -664,7 +662,7 @@ export default function DashboardLayout() {
             {t("nav.reports")}
           </NavLink>
           <div className="flex items-center gap-2 rounded-md px-3 py-2">
-            <div className="flex h-6 w-6 items-center justify-center rounded bg-indigo-100 text-indigo-700">
+            <div className="flex h-6 w-6 items-center justify-center rounded bg-primary/15 text-primary">
               <Building2 className="h-3.5 w-3.5" />
             </div>
             <span className="text-sm font-medium text-sidebar-foreground">{t("workspace")}</span>

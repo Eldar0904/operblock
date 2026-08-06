@@ -1,4 +1,4 @@
-import { useTranslation } from "react-i18next";
+﻿import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { SUPPORTED_LANGUAGES, type AppLanguage } from "@/i18n";
 
@@ -25,7 +25,7 @@ export function LanguageSwitcher({ className, variant = "select" }: LanguageSwit
             className={cn(
               "rounded px-3 py-1.5 text-xs font-medium transition-colors",
               i18n.language === code
-                ? "bg-indigo-600 text-white"
+                ? "bg-primary text-primary-foreground"
                 : "text-muted-foreground hover:text-foreground",
             )}
           >

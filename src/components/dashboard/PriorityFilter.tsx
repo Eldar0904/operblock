@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+﻿import { useEffect, useRef, useState } from "react";
 import { Filter } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -50,7 +50,7 @@ export function PriorityFilter({ value, onChange }: PriorityFilterProps) {
               }}
               className={cn(
                 "block w-full px-4 py-2 text-left text-sm hover:bg-accent",
-                value === opt.value && "bg-indigo-50 font-medium text-indigo-700",
+                value === opt.value && "bg-primary/10 font-medium text-primary",
               )}
             >
               {opt.label}
