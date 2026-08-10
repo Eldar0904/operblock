@@ -54,6 +54,7 @@ async function workspaceContext(db: ReturnType<typeof getDb>, userId: string) {
   const projects = await db.select().from(schema.projects);
   const visibleProjects = projects.filter((project) => canViewProject(project, userId)).slice(0, 100);
   const visibleIds = visibleProjects.map((project) => project.id);
+  const visibleProjectsById = new Map(visibleProjects.map((project) => [project.id, project]));
   const tasks = visibleIds.length
     ? await db.select().from(schema.tasks).where(inArray(schema.tasks.projectId, visibleIds))
     : [];
@@ -80,23 +81,22 @@ async function workspaceContext(db: ReturnType<typeof getDb>, userId: string) {
       canCreateTasks: true,
       isDaily: project.isPersonal,
     })),
-    tasks: tasks.slice(0, 500).map((task) => ({
-      id: task.id,
-      projectId: task.projectId,
-      title: task.title,
-      description: task.description,
-      status: task.status,
-      priority: task.priority,
-      dueDate: task.dueDate?.toISOString() ?? null,
-      assigneeUserIds: assigneesByTask.get(task.id) ?? (task.assigneeUserId ? [task.assigneeUserId] : []),
-      createdByUserId: task.createdByUserId,
-      editable: canUpdateTask(
-        userId,
-        task,
-        project,
-        assigneesByTask.get(task.id) ?? (task.assigneeUserId ? [task.assigneeUserId] : []),
-      ),
-    })),
+    tasks: tasks.slice(0, 500).map((task) => {
+      const project = visibleProjectsById.get(task.projectId);
+      const assigneeUserIds = assigneesByTask.get(task.id) ?? (task.assigneeUserId ? [task.assigneeUserId] : []);
+      return {
+        id: task.id,
+        projectId: task.projectId,
+        title: task.title,
+        description: task.description,
+        status: task.status,
+        priority: task.priority,
+        dueDate: task.dueDate?.toISOString() ?? null,
+        assigneeUserIds,
+        createdByUserId: task.createdByUserId,
+        editable: project ? canUpdateTask(userId, task, project, assigneeUserIds) : false,
+      };
+    }),
   };
 }
 
