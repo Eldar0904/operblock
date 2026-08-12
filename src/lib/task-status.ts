@@ -7,7 +7,7 @@ export function isTerminalTaskStatus(status: string): boolean {
 }
 
 export function isDailyOpenStatus(status: string): boolean {
-  return status !== "paused" && status !== "canceled";
+  return status === "todo" || status === "in_progress";
 }
 
 export function getTaskAssigneeIds(task: {
