@@ -43,8 +43,11 @@ export default function Landing() {
     <div className="min-h-screen overflow-hidden bg-background">
       <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-sm">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-          <Link to="/" className="flex items-center" aria-label="PINE home">
+          <Link to="/" className="flex items-center gap-3" aria-label="PINE OperBlock home">
             <PineLogo className="h-9" />
+            <span className="border-l border-border pl-3 text-sm font-semibold tracking-tight text-foreground">
+              OperBlock
+            </span>
           </Link>
           <nav className="flex items-center gap-3">
             <LanguageSwitcher variant="buttons" />
