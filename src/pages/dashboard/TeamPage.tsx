@@ -1,7 +1,6 @@
 import {
   ArrowLeft,
   ArrowUpRight,
-  BriefcaseBusiness,
   Files,
   Landmark,
   MessagesSquare,
