@@ -1,4 +1,5 @@
 ﻿import { CheckCircle2, Clock, AlertTriangle, Layers } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import type { ApiTask } from "@/lib/mock-data";
@@ -8,9 +9,24 @@ import { useColumnConfig } from "@/i18n/use-labels";
 interface OverviewViewProps {
   tasks: ApiTask[];
   title?: string;
+  projectId?: string;
 }
 
-export function OverviewView({ tasks, title }: OverviewViewProps) {
+const PROJECT_NOTE_PREFIX = "operblock-project-note:";
+
+export function OverviewView({ tasks, title, projectId }: OverviewViewProps) {
+  const noteKey = `${PROJECT_NOTE_PREFIX}${projectId ?? title ?? "project"}`;
+  const [note, setNote] = useState(() => localStorage.getItem(noteKey) ?? "");
+
+  useEffect(() => {
+    setNote(localStorage.getItem(noteKey) ?? "");
+  }, [noteKey]);
+
+  const updateNote = (value: string) => {
+    setNote(value);
+    if (value.trim()) localStorage.setItem(noteKey, value);
+    else localStorage.removeItem(noteKey);
+  };
   const { t } = useTranslation();
   const columnConfig = useColumnConfig();
   const stats = computeTaskStats(tasks);
@@ -50,6 +66,15 @@ export function OverviewView({ tasks, title }: OverviewViewProps) {
           color="text-amber-600 bg-amber-50"
         />
       </div>
+
+      <textarea
+        value={note}
+        onChange={(event) => updateNote(event.target.value)}
+        placeholder="Добавить заметку или ссылку…"
+        aria-label="Заметка проекта"
+        rows={1}
+        className="min-h-9 w-full resize-y rounded-md border border-border bg-background px-3 py-2 text-sm leading-5 outline-none placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20"
+      />
 
       <div className="rounded-lg border border-border bg-background p-5">
         <h3 className="mb-4 text-sm font-semibold">{t("overview.byStatus")}</h3>
