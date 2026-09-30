@@ -17,6 +17,8 @@ import { NotificationsDropdown } from "@/components/dashboard/NotificationsDropd
 import { useDailyProject, useMembersList } from "@/hooks/useProjects";
 import { useTasks } from "@/hooks/useTasks";
 import { getTaskAssigneeIds, isDailyOpenStatus } from "@/lib/task-status";
+import type { ApiMember } from "@/lib/api";
+import type { ApiTask } from "@/lib/mock-data";
 
 const ROLE_DETAILS = [
   {
@@ -104,7 +106,7 @@ function TeamCards({
   members,
   loading,
 }: {
-  members: ReturnType<typeof useMembersList>;
+  members: ApiMember[];
   loading: boolean;
 }) {
   const navigate = useNavigate();
@@ -165,8 +167,8 @@ function MemberWorkspace({
   error,
   onBack,
 }: {
-  member: ReturnType<typeof useMembersList>[number];
-  tasks: Array<{ id: string; title: string; status: string; assigneeUserIds?: string[]; assigneeUserId?: string | null }>;
+  member: ApiMember;
+  tasks: ApiTask[];
   loading: boolean;
   error: boolean;
   onBack: () => void;
@@ -178,7 +180,7 @@ function MemberWorkspace({
     const personTasks = tasks.filter((task) => getTaskAssigneeIds(task).includes(member.id));
     return {
       open: personTasks.filter(
-        (task) => isDailyOpenStatus(task.status as never) && task.status !== "done",
+        (task) => isDailyOpenStatus(task.status) && task.status !== "done",
       ),
       done: personTasks.filter((task) => task.status === "done"),
     };
