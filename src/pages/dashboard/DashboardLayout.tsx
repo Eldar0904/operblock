@@ -39,6 +39,10 @@ import { canAccessProjectContents } from "@/lib/project-access";
 import { useToast } from "@/components/ui/toast";
 import AIAssistant from "@/components/dashboard/AIAssistant";
 import { PineLogo } from "@/components/PineLogo";
+import {
+  getEnabledOptionalModules,
+  OPTIONAL_MODULES_UPDATED_EVENT,
+} from "@/lib/optional-modules";
 
 const ACTIVE_PROJECT_KEY = "operblock-active-project";
 const COLLAPSED_PORTFOLIOS_KEY = "operblock-collapsed-portfolios";
@@ -69,6 +73,9 @@ export default function DashboardLayout() {
   const [renameValue, setRenameValue] = useState("");
   const [menuProjectId, setMenuProjectId] = useState<string | null>(null);
   const [operoOpen, setOperoOpen] = useState(false);
+  const [enabledModules, setEnabledModules] = useState(
+    () => new Set(getEnabledOptionalModules()),
+  );
   const [collapsed, setCollapsed] = useState<Set<string>>(() => {
     try {
       const raw = localStorage.getItem(COLLAPSED_PORTFOLIOS_KEY);
@@ -77,6 +84,14 @@ export default function DashboardLayout() {
       return new Set();
     }
   });
+
+  useEffect(() => {
+    const syncEnabledModules = () =>
+      setEnabledModules(new Set(getEnabledOptionalModules()));
+    window.addEventListener(OPTIONAL_MODULES_UPDATED_EVENT, syncEnabledModules);
+    return () =>
+      window.removeEventListener(OPTIONAL_MODULES_UPDATED_EVENT, syncEnabledModules);
+  }, []);
 
   const projectRouteMatch = useMatch("/dashboard/projects/:projectId");
   const routeProjectId = projectRouteMatch?.params.projectId ?? null;
@@ -258,9 +273,9 @@ export default function DashboardLayout() {
     { icon: CalendarDays, label: t("nav.daily"), to: "/dashboard/daily" },
   ];
 
-  const longTermNav = [
-    { icon: Target, label: t("nav.goals"), to: "/dashboard/goals" },
-  ];
+  const longTermNav = enabledModules.has("goals")
+    ? [{ icon: Target, label: t("nav.goals"), to: "/dashboard/goals" }]
+    : [];
 
   const navLinkClass = ({ isActive }: { isActive: boolean }) =>
     cn(
@@ -479,19 +494,21 @@ export default function DashboardLayout() {
             </NavLink>
           ))}
 
-          <button
-            type="button"
-            onClick={() => setOperoOpen((value) => !value)}
-            className="mt-2 flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sidebar-foreground transition-colors hover:bg-sidebar-accent"
-          >
-            <div className="flex h-4 w-4 shrink-0 items-center justify-center rounded bg-sidebar-accent text-primary">
-              <Sparkles className="h-3 w-3" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold">Opero</p>
-              <p className="truncate text-[10px] text-muted-foreground">{t("opero.sidebarDescription")}</p>
-            </div>
-          </button>
+          {enabledModules.has("opero") && (
+            <button
+              type="button"
+              onClick={() => setOperoOpen((value) => !value)}
+              className="mt-2 flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sidebar-foreground transition-colors hover:bg-sidebar-accent"
+            >
+              <div className="flex h-4 w-4 shrink-0 items-center justify-center rounded bg-sidebar-accent text-primary">
+                <Sparkles className="h-3 w-3" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold">Opero</p>
+                <p className="truncate text-[10px] text-muted-foreground">{t("opero.sidebarDescription")}</p>
+              </div>
+            </button>
+          )}
 
           {false && <div className="ml-2 border-l border-sidebar-border pl-2 pt-1">
             <div className="mb-1 flex items-center justify-between px-3">
@@ -677,11 +694,13 @@ export default function DashboardLayout() {
       <div className="flex min-w-0 flex-1 flex-col">
         <Outlet context={{ activeProject }} />
       </div>
-      <AIAssistant
-        desktopOpen={operoOpen}
-        onDesktopOpenChange={setOperoOpen}
-        contextProjectName={routeProjectId ? activeProject?.name : undefined}
-      />
+      {enabledModules.has("opero") && (
+        <AIAssistant
+          desktopOpen={operoOpen}
+          onDesktopOpenChange={setOperoOpen}
+          contextProjectName={routeProjectId ? activeProject?.name : undefined}
+        />
+      )}
     </div>
   );
 }
