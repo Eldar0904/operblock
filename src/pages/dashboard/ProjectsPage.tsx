@@ -459,7 +459,11 @@ export default function ProjectsPage() {
         ) : activeView === "list" ? (
           <ListView tasks={filteredTasks} onEdit={openEditModal} onDelete={handleDelete} />
         ) : activeView === "overview" ? (
-          <OverviewView tasks={filteredTasks} title={t("overview.projectTitle")} />
+          <OverviewView
+            tasks={filteredTasks}
+            title={t("overview.projectTitle")}
+            projectId={activeProject?.id}
+          />
         ) : activeView === "timeline" ? (
           <TimelineView tasks={filteredTasks} onEdit={openEditModal} />
         ) : (
