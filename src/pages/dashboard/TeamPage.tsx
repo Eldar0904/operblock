@@ -3,12 +3,8 @@ import {
   ArrowUpRight,
   CheckCircle2,
   Circle,
-  Files,
-  Landmark,
-  MessagesSquare,
-  Truck,
+  UserRound,
   Users,
-  Wrench,
 } from "lucide-react";
 import { UserButton } from "@clerk/clerk-react";
 import { useMemo } from "react";
@@ -19,50 +15,6 @@ import { useTasks } from "@/hooks/useTasks";
 import { getTaskAssigneeIds, isDailyOpenStatus } from "@/lib/task-status";
 import type { ApiMember } from "@/lib/api";
 import type { ApiTask } from "@/lib/mock-data";
-
-const ROLE_DETAILS = [
-  {
-    match: ["eldar", "aidar"],
-    name: "IT-отдел",
-    description: "Разработка, технические задачи и поддержка.",
-    icon: Wrench,
-  },
-  {
-    match: ["zulhiya", "зулия", "зульхия"],
-    name: "Ресепшен",
-    description: "Посетители, звонки и входящие запросы.",
-    icon: MessagesSquare,
-  },
-  {
-    match: ["sandu"],
-    name: "Сотрудники и документы",
-    description: "Кадровые вопросы и документы.",
-    icon: Files,
-  },
-  {
-    match: ["nurbek", "нурбек"],
-    name: "Помощник руководителя",
-    description: "Поручения, решения и контроль исполнения.",
-    icon: Landmark,
-  },
-  {
-    match: ["erbol", "ербол"],
-    name: "Доставка и склад",
-    description: "Доставка, склад и передача товаров.",
-    icon: Truck,
-  },
-] as const;
-
-function roleFor(name: string) {
-  const normalized = name.toLowerCase();
-  return (
-    ROLE_DETAILS.find((role) => role.match.some((match) => normalized.includes(match))) ?? {
-      name: "Сотрудник",
-      description: "Рабочие задачи сотрудника.",
-      icon: Users,
-    }
-  );
-}
 
 export default function TeamPage() {
   const navigate = useNavigate();
@@ -102,13 +54,7 @@ function Header({ eyebrow, title }: { eyebrow: string; title: string }) {
   );
 }
 
-function TeamCards({
-  members,
-  loading,
-}: {
-  members: ApiMember[];
-  loading: boolean;
-}) {
+function TeamCards({ members, loading }: { members: ApiMember[]; loading: boolean }) {
   const navigate = useNavigate();
 
   return (
@@ -118,7 +64,7 @@ function TeamCards({
         <div className="mx-auto max-w-5xl">
           <h2 className="text-2xl font-semibold tracking-tight">Команда</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Выберите сотрудника, чтобы открыть его рабочее пространство.
+            Выберите сотрудника, чтобы открыть его задачи.
           </p>
 
           {loading ? (
@@ -131,24 +77,21 @@ function TeamCards({
           ) : (
             <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {members.map((member) => {
-                const personName = member.fullName ?? member.email ?? "Сотрудник";
-                const role = roleFor(personName);
-                const Icon = role.icon;
+                const name = member.fullName ?? member.email ?? "Сотрудник";
                 return (
                   <button
                     key={member.id}
                     type="button"
                     onClick={() => navigate(`/dashboard/team/${member.id}`)}
-                    className="group rounded-xl border border-border bg-background p-5 text-left transition-colors hover:border-primary/35 hover:bg-primary/5"
+                    className="group flex items-center justify-between rounded-xl border border-border bg-background p-5 text-left transition-colors hover:border-primary/35 hover:bg-primary/5"
                   >
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                        <Icon className="h-5 w-5" />
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+                        <UserRound className="h-5 w-5" />
                       </div>
-                      <ArrowUpRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                      <h3 className="font-semibold">{name}</h3>
                     </div>
-                    <h3 className="mt-4 font-semibold">{personName}</h3>
-                    <p className="mt-1 text-sm text-muted-foreground">{role.name}</p>
+                    <ArrowUpRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
                   </button>
                 );
               })}
@@ -173,9 +116,7 @@ function MemberWorkspace({
   error: boolean;
   onBack: () => void;
 }) {
-  const personName = member.fullName ?? member.email ?? "Сотрудник";
-  const role = roleFor(personName);
-  const Icon = role.icon;
+  const name = member.fullName ?? member.email ?? "Сотрудник";
   const { open, done } = useMemo(() => {
     const personTasks = tasks.filter((task) => getTaskAssigneeIds(task).includes(member.id));
     return {
@@ -188,7 +129,7 @@ function MemberWorkspace({
 
   return (
     <>
-      <Header eyebrow="Команда / рабочее пространство" title={personName} />
+      <Header eyebrow="Команда" title={name} />
       <main className="flex-1 overflow-auto p-6">
         <div className="mx-auto max-w-5xl">
           <button
@@ -200,17 +141,11 @@ function MemberWorkspace({
             Назад к команде
           </button>
 
-          <section className="flex flex-wrap items-start justify-between gap-4 rounded-xl border border-border bg-background p-6">
-            <div className="flex gap-4">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <Icon className="h-5 w-5" />
-              </div>
-              <div>
-                <h2 className="text-xl font-semibold tracking-tight">{personName}</h2>
-                <p className="mt-1 text-sm font-medium text-primary">{role.name}</p>
-                <p className="mt-2 text-sm text-muted-foreground">{role.description}</p>
-              </div>
+          <section className="flex items-center gap-4 rounded-xl border border-border bg-background p-6">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <UserRound className="h-5 w-5" />
             </div>
+            <h2 className="text-xl font-semibold tracking-tight">{name}</h2>
           </section>
 
           {loading ? (
@@ -238,7 +173,7 @@ function TaskColumn({
 }: {
   icon: typeof Circle;
   title: string;
-  tasks: Array<{ id: string; title: string }>;
+  tasks: ApiTask[];
   empty: string;
   done?: boolean;
 }) {
