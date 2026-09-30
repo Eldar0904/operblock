@@ -1,236 +1,134 @@
-import {
-  ArrowLeft,
-  ArrowUpRight,
-  Files,
-  Landmark,
-  MessagesSquare,
-  Truck,
-  Code2,
-} from "lucide-react";
-import { useNavigate, useParams } from "react-router-dom";
+import { CheckCircle2, Circle, Users } from "lucide-react";
 import { UserButton } from "@clerk/clerk-react";
+import { useMemo } from "react";
 import { NotificationsDropdown } from "@/components/dashboard/NotificationsDropdown";
-
-type WorkspaceId =
-  | "it"
-  | "reception"
-  | "staff-documents"
-  | "chief-office"
-  | "delivery-warehouse";
-
-type TeamWorkspace = {
-  id: WorkspaceId;
-  name: string;
-  group: "IT Department" | "Office" | "Operations";
-  members: string[];
-  summary: string;
-  icon: typeof Code2;
-  sections: Array<{ title: string; description: string }>;
-};
-
-const WORKSPACES: TeamWorkspace[] = [
-  {
-    id: "it",
-    name: "IT Department",
-    group: "IT Department",
-    members: ["Eldar", "Aidar"],
-    summary: "Shared development work, technical decisions, releases, and internal support.",
-    icon: Code2,
-    sections: [
-      { title: "Development queue", description: "Shared priorities for Eldar and Aidar." },
-      { title: "Technical decisions", description: "Architecture, credentials, links, and decisions." },
-      { title: "Release & support", description: "What is ready, deployed, or needs attention." },
-    ],
-  },
-  {
-    id: "reception",
-    name: "Reception",
-    group: "Office",
-    members: ["Zulhiya"],
-    summary: "Visitors, calls, incoming requests, and clear hand-offs.",
-    icon: MessagesSquare,
-    sections: [
-      { title: "Incoming requests", description: "Visitors, calls, messages, and who should respond." },
-      { title: "Today's hand-offs", description: "Requests passed to the right department." },
-      { title: "Reception notes", description: "Useful context kept out of personal task boards." },
-    ],
-  },
-  {
-    id: "staff-documents",
-    name: "Staff & Documents",
-    group: "Office",
-    members: ["Sandu"],
-    summary: "Staff requests, operational documents, and the current approved records.",
-    icon: Files,
-    sections: [
-      { title: "Document register", description: "What arrived, is pending, or is complete." },
-      { title: "Staff requests", description: "Follow-up items with a clear owner." },
-      { title: "Templates & records", description: "The approved, current source for the office." },
-    ],
-  },
-  {
-    id: "chief-office",
-    name: "Chief's Office",
-    group: "Operations",
-    members: ["Nurbek"],
-    summary: "Executive briefs, delegated work, decisions, and follow-through.",
-    icon: Landmark,
-    sections: [
-      { title: "Decision follow-up", description: "What was agreed and the next responsible person." },
-      { title: "Executive briefs", description: "A short, current view for the Chief." },
-      { title: "Delegated work", description: "Cross-team requests that need a response." },
-    ],
-  },
-  {
-    id: "delivery-warehouse",
-    name: "Delivery & Warehouse",
-    group: "Operations",
-    members: ["Erbol"],
-    summary: "Deliveries, warehouse status, stock exceptions, and proof of hand-off.",
-    icon: Truck,
-    sections: [
-      { title: "Today's deliveries", description: "What is leaving, arriving, or delayed." },
-      { title: "Warehouse status", description: "Receiving, stock, and exceptions." },
-      { title: "Proof & hand-off", description: "Completed delivery records and confirmations." },
-    ],
-  },
-];
+import { useDailyProject, useMembersList } from "@/hooks/useProjects";
+import { useTasks } from "@/hooks/useTasks";
+import { getTaskAssigneeIds, isDailyOpenStatus } from "@/lib/task-status";
 
 export default function TeamPage() {
-  const navigate = useNavigate();
-  const { workspaceId } = useParams<{ workspaceId: WorkspaceId }>();
-  const activeWorkspace = WORKSPACES.find((workspace) => workspace.id === workspaceId);
+  const { data: dailyProject, isLoading: dailyLoading } = useDailyProject();
+  const members = useMembersList();
+  const { data: tasks = [], isLoading: tasksLoading, isError } = useTasks(dailyProject?.id);
 
-  if (workspaceId && activeWorkspace) {
-    return <WorkspacePage workspace={activeWorkspace} onBack={() => navigate("/dashboard/team")} />;
-  }
-
-  return <TeamMap onOpen={(id) => navigate(`/dashboard/team/${id}`)} />;
-}
-
-function Header({ eyebrow, title }: { eyebrow: string; title: string }) {
-  return (
-    <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-background px-6">
-      <div>
-        <p className="text-xs text-muted-foreground">{eyebrow}</p>
-        <h1 className="text-base font-semibold">{title}</h1>
-      </div>
-      <div className="flex items-center gap-3">
-        <NotificationsDropdown />
-        <UserButton appearance={{ elements: { avatarBox: "h-7 w-7" } }} />
-      </div>
-    </header>
+  const cards = useMemo(
+    () =>
+      members.map((member) => {
+        const personTasks = tasks.filter((task) => getTaskAssigneeIds(task).includes(member.id));
+        return {
+          id: member.id,
+          name: member.fullName ?? member.email ?? "Сотрудник",
+          open: personTasks.filter(
+            (task) => isDailyOpenStatus(task.status) && task.status !== "done",
+          ),
+          done: personTasks.filter((task) => task.status === "done"),
+        };
+      }),
+    [members, tasks],
   );
-}
 
-function TeamMap({ onOpen }: { onOpen: (id: WorkspaceId) => void }) {
-  const groups = ["IT Department", "Office", "Operations"] as const;
+  const loading = dailyLoading || tasksLoading;
 
   return (
     <>
-      <Header eyebrow="Shared workspaces" title="Team" />
-      <main className="flex-1 overflow-auto p-6">
-        <div className="mx-auto max-w-5xl">
-          <h2 className="text-2xl font-semibold tracking-tight">Work is organized by responsibility.</h2>
-          <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-            My Work stays personal. These spaces hold the shared information and work for each department.
-          </p>
+      <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-background px-6">
+        <div>
+          <p className="text-xs text-muted-foreground">Общая работа</p>
+          <h1 className="text-base font-semibold">Команда</h1>
+        </div>
+        <div className="flex items-center gap-3">
+          <NotificationsDropdown />
+          <UserButton appearance={{ elements: { avatarBox: "h-7 w-7" } }} />
+        </div>
+      </header>
 
-          <div className="mt-8 space-y-7">
-            {groups.map((group) => {
-              const workspaces = WORKSPACES.filter((workspace) => workspace.group === group);
-              return (
-                <section key={group}>
-                  <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    {group}
-                  </h3>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    {workspaces.map((workspace) => {
-                      const Icon = workspace.icon;
-                      return (
-                        <button
-                          key={workspace.id}
-                          type="button"
-                          onClick={() => onOpen(workspace.id)}
-                          className="group rounded-xl border border-border bg-background p-5 text-left transition-colors hover:border-primary/35 hover:bg-primary/5"
-                        >
-                          <div className="flex items-start justify-between gap-4">
-                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                              <Icon className="h-5 w-5" />
-                            </div>
-                            <ArrowUpRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
-                          </div>
-                          <h4 className="mt-4 font-semibold">{workspace.name}</h4>
-                          <p className="mt-1 text-sm text-muted-foreground">{workspace.summary}</p>
-                          <p className="mt-4 text-xs font-medium text-primary">{workspace.members.join(" · ")}</p>
-                        </button>
-                      );
-                    })}
+      <main className="flex-1 overflow-auto p-6">
+        <div className="mx-auto max-w-6xl">
+          <div className="mb-6">
+            <h2 className="text-2xl font-semibold tracking-tight">Команда</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Те же рабочие задачи — собранные в отдельных карточках каждого сотрудника.
+            </p>
+          </div>
+
+          {loading ? (
+            <p className="text-sm text-muted-foreground">Загрузка задач…</p>
+          ) : isError ? (
+            <p className="text-sm text-red-600">Не удалось загрузить задачи команды.</p>
+          ) : cards.length === 0 ? (
+            <div className="rounded-xl border border-border bg-background p-8 text-center">
+              <Users className="mx-auto h-6 w-6 text-muted-foreground" />
+              <p className="mt-3 text-sm text-muted-foreground">В команде пока нет участников.</p>
+            </div>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {cards.map((card) => (
+                <section key={card.id} className="overflow-hidden rounded-xl border border-border bg-background">
+                  <div className="flex items-center justify-between border-b border-border px-4 py-3">
+                    <h3 className="font-semibold">{card.name}</h3>
+                    <span className="rounded-full bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
+                      {card.open.length}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 divide-x divide-border">
+                    <TaskColumn
+                      icon={Circle}
+                      title="В работе"
+                      tasks={card.open.map((task) => task.title)}
+                      empty="Нет задач"
+                    />
+                    <TaskColumn
+                      icon={CheckCircle2}
+                      title="Готово"
+                      tasks={card.done.map((task) => task.title)}
+                      empty="Нет завершённых"
+                      done
+                    />
                   </div>
                 </section>
-              );
-            })}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </main>
     </>
   );
 }
 
-function WorkspacePage({
-  workspace,
-  onBack,
+function TaskColumn({
+  icon: Icon,
+  title,
+  tasks,
+  empty,
+  done = false,
 }: {
-  workspace: TeamWorkspace;
-  onBack: () => void;
+  icon: typeof Circle;
+  title: string;
+  tasks: string[];
+  empty: string;
+  done?: boolean;
 }) {
-  const Icon = workspace.icon;
-
   return (
-    <>
-      <Header eyebrow="Team / shared workspace" title={workspace.name} />
-      <main className="flex-1 overflow-auto p-6">
-        <div className="mx-auto max-w-5xl">
-          <button
-            type="button"
-            onClick={onBack}
-            className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Team
-          </button>
-
-          <section className="rounded-xl border border-border bg-background p-6">
-            <div className="flex flex-wrap items-start justify-between gap-5">
-              <div className="flex gap-4">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                  <Icon className="h-5 w-5" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-semibold tracking-tight">{workspace.name}</h2>
-                  <p className="mt-1 max-w-xl text-sm text-muted-foreground">{workspace.summary}</p>
-                </div>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {workspace.members.map((member) => (
-                  <span key={member} className="rounded-full bg-muted px-3 py-1.5 text-xs font-medium">
-                    {member}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          <div className="mt-5 grid gap-4 md:grid-cols-3">
-            {workspace.sections.map((section) => (
-              <section key={section.title} className="rounded-xl border border-border bg-background p-5">
-                <h3 className="font-semibold">{section.title}</h3>
-                <p className="mt-2 text-sm text-muted-foreground">{section.description}</p>
-              </section>
-            ))}
-          </div>
-        </div>
-      </main>
-    </>
+    <div className="min-w-0 p-3">
+      <div className="mb-3 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+        <Icon className={`h-3.5 w-3.5 ${done ? "text-emerald-600" : ""}`} />
+        <span>{title}</span>
+      </div>
+      {tasks.length ? (
+        <ul className="space-y-2">
+          {tasks.map((task, index) => (
+            <li
+              key={`${task}-${index}`}
+              className={`rounded-md bg-muted/60 px-2.5 py-2 text-xs leading-snug ${done ? "text-muted-foreground line-through" : ""}`}
+            >
+              {task}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="py-2 text-xs text-muted-foreground">{empty}</p>
+      )}
+    </div>
   );
 }
