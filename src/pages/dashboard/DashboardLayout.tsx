@@ -2,7 +2,6 @@
 import {
   BarChart3,
   Building2,
-  CalendarDays,
   ChevronDown,
   ChevronRight,
   Folder,
@@ -16,6 +15,7 @@ import {
   Sparkles,
   Target,
   Trash2,
+  Users,
 } from "lucide-react";
 import { Link, NavLink, Outlet, useMatch, useNavigate } from "react-router-dom";
 import { useAuth } from "@clerk/clerk-react";
@@ -270,7 +270,7 @@ export default function DashboardLayout() {
 
   const dailyNav = [
     { icon: LayoutDashboard, label: t("nav.dashboard"), to: "/dashboard" },
-    { icon: CalendarDays, label: t("nav.daily"), to: "/dashboard/daily" },
+    { icon: Users, label: "Team", to: "/dashboard/team" },
   ];
 
   const longTermNav = enabledModules.has("goals")
