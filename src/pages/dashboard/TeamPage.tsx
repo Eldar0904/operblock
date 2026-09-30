@@ -1,93 +1,224 @@
-import { CheckCircle2, Circle, Users } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowUpRight,
+  CheckCircle2,
+  Circle,
+  Files,
+  Landmark,
+  MessagesSquare,
+  Truck,
+  Users,
+  Wrench,
+} from "lucide-react";
 import { UserButton } from "@clerk/clerk-react";
 import { useMemo } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { NotificationsDropdown } from "@/components/dashboard/NotificationsDropdown";
 import { useDailyProject, useMembersList } from "@/hooks/useProjects";
 import { useTasks } from "@/hooks/useTasks";
 import { getTaskAssigneeIds, isDailyOpenStatus } from "@/lib/task-status";
 
+const ROLE_DETAILS = [
+  {
+    match: ["eldar", "aidar"],
+    name: "IT-отдел",
+    description: "Разработка, технические задачи и поддержка.",
+    icon: Wrench,
+  },
+  {
+    match: ["zulhiya", "зулия", "зульхия"],
+    name: "Ресепшен",
+    description: "Посетители, звонки и входящие запросы.",
+    icon: MessagesSquare,
+  },
+  {
+    match: ["sandu"],
+    name: "Сотрудники и документы",
+    description: "Кадровые вопросы и документы.",
+    icon: Files,
+  },
+  {
+    match: ["nurbek", "нурбек"],
+    name: "Помощник руководителя",
+    description: "Поручения, решения и контроль исполнения.",
+    icon: Landmark,
+  },
+  {
+    match: ["erbol", "ербол"],
+    name: "Доставка и склад",
+    description: "Доставка, склад и передача товаров.",
+    icon: Truck,
+  },
+] as const;
+
+function roleFor(name: string) {
+  const normalized = name.toLowerCase();
+  return (
+    ROLE_DETAILS.find((role) => role.match.some((match) => normalized.includes(match))) ?? {
+      name: "Сотрудник",
+      description: "Рабочие задачи сотрудника.",
+      icon: Users,
+    }
+  );
+}
+
 export default function TeamPage() {
+  const navigate = useNavigate();
+  const { memberId } = useParams<{ memberId: string }>();
   const { data: dailyProject, isLoading: dailyLoading } = useDailyProject();
   const members = useMembersList();
   const { data: tasks = [], isLoading: tasksLoading, isError } = useTasks(dailyProject?.id);
+  const activeMember = members.find((member) => member.id === memberId);
 
-  const cards = useMemo(
-    () =>
-      members.map((member) => {
-        const personTasks = tasks.filter((task) => getTaskAssigneeIds(task).includes(member.id));
-        return {
-          id: member.id,
-          name: member.fullName ?? member.email ?? "Сотрудник",
-          open: personTasks.filter(
-            (task) => isDailyOpenStatus(task.status) && task.status !== "done",
-          ),
-          done: personTasks.filter((task) => task.status === "done"),
-        };
-      }),
-    [members, tasks],
+  if (memberId && activeMember) {
+    return (
+      <MemberWorkspace
+        member={activeMember}
+        tasks={tasks}
+        loading={dailyLoading || tasksLoading}
+        error={isError}
+        onBack={() => navigate("/dashboard/team")}
+      />
+    );
+  }
+
+  return <TeamCards members={members} loading={dailyLoading || tasksLoading} />;
+}
+
+function Header({ eyebrow, title }: { eyebrow: string; title: string }) {
+  return (
+    <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-background px-6">
+      <div>
+        <p className="text-xs text-muted-foreground">{eyebrow}</p>
+        <h1 className="text-base font-semibold">{title}</h1>
+      </div>
+      <div className="flex items-center gap-3">
+        <NotificationsDropdown />
+        <UserButton appearance={{ elements: { avatarBox: "h-7 w-7" } }} />
+      </div>
+    </header>
   );
+}
 
-  const loading = dailyLoading || tasksLoading;
+function TeamCards({
+  members,
+  loading,
+}: {
+  members: ReturnType<typeof useMembersList>;
+  loading: boolean;
+}) {
+  const navigate = useNavigate();
 
   return (
     <>
-      <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-background px-6">
-        <div>
-          <p className="text-xs text-muted-foreground">Общая работа</p>
-          <h1 className="text-base font-semibold">Команда</h1>
-        </div>
-        <div className="flex items-center gap-3">
-          <NotificationsDropdown />
-          <UserButton appearance={{ elements: { avatarBox: "h-7 w-7" } }} />
-        </div>
-      </header>
-
+      <Header eyebrow="Общая работа" title="Команда" />
       <main className="flex-1 overflow-auto p-6">
-        <div className="mx-auto max-w-6xl">
-          <div className="mb-6">
-            <h2 className="text-2xl font-semibold tracking-tight">Команда</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Те же рабочие задачи — собранные в отдельных карточках каждого сотрудника.
-            </p>
-          </div>
+        <div className="mx-auto max-w-5xl">
+          <h2 className="text-2xl font-semibold tracking-tight">Команда</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Выберите сотрудника, чтобы открыть его рабочее пространство.
+          </p>
 
           {loading ? (
-            <p className="text-sm text-muted-foreground">Загрузка задач…</p>
-          ) : isError ? (
-            <p className="text-sm text-red-600">Не удалось загрузить задачи команды.</p>
-          ) : cards.length === 0 ? (
-            <div className="rounded-xl border border-border bg-background p-8 text-center">
+            <p className="mt-8 text-sm text-muted-foreground">Загрузка команды…</p>
+          ) : members.length === 0 ? (
+            <div className="mt-8 rounded-xl border border-border bg-background p-8 text-center">
               <Users className="mx-auto h-6 w-6 text-muted-foreground" />
               <p className="mt-3 text-sm text-muted-foreground">В команде пока нет участников.</p>
             </div>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {cards.map((card) => (
-                <section key={card.id} className="overflow-hidden rounded-xl border border-border bg-background">
-                  <div className="flex items-center justify-between border-b border-border px-4 py-3">
-                    <h3 className="font-semibold">{card.name}</h3>
-                    <span className="rounded-full bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
-                      {card.open.length}
-                    </span>
-                  </div>
+            <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {members.map((member) => {
+                const personName = member.fullName ?? member.email ?? "Сотрудник";
+                const role = roleFor(personName);
+                const Icon = role.icon;
+                return (
+                  <button
+                    key={member.id}
+                    type="button"
+                    onClick={() => navigate(`/dashboard/team/${member.id}`)}
+                    className="group rounded-xl border border-border bg-background p-5 text-left transition-colors hover:border-primary/35 hover:bg-primary/5"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                        <Icon className="h-5 w-5" />
+                      </div>
+                      <ArrowUpRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                    </div>
+                    <h3 className="mt-4 font-semibold">{personName}</h3>
+                    <p className="mt-1 text-sm text-muted-foreground">{role.name}</p>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </main>
+    </>
+  );
+}
 
-                  <div className="grid grid-cols-2 divide-x divide-border">
-                    <TaskColumn
-                      icon={Circle}
-                      title="В работе"
-                      tasks={card.open.map((task) => task.title)}
-                      empty="Нет задач"
-                    />
-                    <TaskColumn
-                      icon={CheckCircle2}
-                      title="Готово"
-                      tasks={card.done.map((task) => task.title)}
-                      empty="Нет завершённых"
-                      done
-                    />
-                  </div>
-                </section>
-              ))}
+function MemberWorkspace({
+  member,
+  tasks,
+  loading,
+  error,
+  onBack,
+}: {
+  member: ReturnType<typeof useMembersList>[number];
+  tasks: Array<{ id: string; title: string; status: string; assigneeUserIds?: string[]; assigneeUserId?: string | null }>;
+  loading: boolean;
+  error: boolean;
+  onBack: () => void;
+}) {
+  const personName = member.fullName ?? member.email ?? "Сотрудник";
+  const role = roleFor(personName);
+  const Icon = role.icon;
+  const { open, done } = useMemo(() => {
+    const personTasks = tasks.filter((task) => getTaskAssigneeIds(task).includes(member.id));
+    return {
+      open: personTasks.filter(
+        (task) => isDailyOpenStatus(task.status as never) && task.status !== "done",
+      ),
+      done: personTasks.filter((task) => task.status === "done"),
+    };
+  }, [tasks, member.id]);
+
+  return (
+    <>
+      <Header eyebrow="Команда / рабочее пространство" title={personName} />
+      <main className="flex-1 overflow-auto p-6">
+        <div className="mx-auto max-w-5xl">
+          <button
+            type="button"
+            onClick={onBack}
+            className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Назад к команде
+          </button>
+
+          <section className="flex flex-wrap items-start justify-between gap-4 rounded-xl border border-border bg-background p-6">
+            <div className="flex gap-4">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <Icon className="h-5 w-5" />
+              </div>
+              <div>
+                <h2 className="text-xl font-semibold tracking-tight">{personName}</h2>
+                <p className="mt-1 text-sm font-medium text-primary">{role.name}</p>
+                <p className="mt-2 text-sm text-muted-foreground">{role.description}</p>
+              </div>
+            </div>
+          </section>
+
+          {loading ? (
+            <p className="mt-6 text-sm text-muted-foreground">Загрузка задач…</p>
+          ) : error ? (
+            <p className="mt-6 text-sm text-red-600">Не удалось загрузить задачи.</p>
+          ) : (
+            <div className="mt-5 grid gap-4 md:grid-cols-2">
+              <TaskColumn icon={Circle} title="В работе" tasks={open} empty="Нет задач в работе" />
+              <TaskColumn icon={CheckCircle2} title="Готово" tasks={done} empty="Нет завершённых задач" done />
             </div>
           )}
         </div>
@@ -105,30 +236,31 @@ function TaskColumn({
 }: {
   icon: typeof Circle;
   title: string;
-  tasks: string[];
+  tasks: Array<{ id: string; title: string }>;
   empty: string;
   done?: boolean;
 }) {
   return (
-    <div className="min-w-0 p-3">
-      <div className="mb-3 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-        <Icon className={`h-3.5 w-3.5 ${done ? "text-emerald-600" : ""}`} />
-        <span>{title}</span>
+    <section className="rounded-xl border border-border bg-background p-5">
+      <div className="mb-4 flex items-center gap-2">
+        <Icon className={`h-4 w-4 ${done ? "text-emerald-600" : "text-primary"}`} />
+        <h3 className="font-semibold">{title}</h3>
+        <span className="text-sm text-muted-foreground">({tasks.length})</span>
       </div>
       {tasks.length ? (
         <ul className="space-y-2">
-          {tasks.map((task, index) => (
+          {tasks.map((task) => (
             <li
-              key={`${task}-${index}`}
-              className={`rounded-md bg-muted/60 px-2.5 py-2 text-xs leading-snug ${done ? "text-muted-foreground line-through" : ""}`}
+              key={task.id}
+              className={`rounded-md bg-muted/60 px-3 py-2.5 text-sm ${done ? "text-muted-foreground line-through" : ""}`}
             >
-              {task}
+              {task.title}
             </li>
           ))}
         </ul>
       ) : (
-        <p className="py-2 text-xs text-muted-foreground">{empty}</p>
+        <p className="py-6 text-sm text-muted-foreground">{empty}</p>
       )}
-    </div>
+    </section>
   );
 }
