@@ -33,6 +33,16 @@ export interface ApiAttachment {
   createdAt: string;
 }
 
+export interface ApiMileageEntry {
+  id: string;
+  userId: string;
+  entryDate: string;
+  kilometers: number;
+  ratePerKm: number;
+  note: string | null;
+  createdAt: string;
+}
+
 export interface ApiGoal {
   id: string;
   title: string;
@@ -287,6 +297,22 @@ export const api = {
 
   deleteAttachment: (token: string | null, id: string) =>
     request<void>(`/attachments/${id}`, { method: "DELETE" }, token),
+
+  getMileageEntries: (token: string | null, userId: string, from: string, to: string) =>
+    request<ApiMileageEntry[]>(
+      `/mileage/${userId}?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+      {},
+      token,
+    ),
+
+  createMileageEntry: (
+    token: string | null,
+    userId: string,
+    data: { entryDate: string; kilometers: number; ratePerKm: number; note?: string },
+  ) => request<ApiMileageEntry>(`/mileage/${userId}`, { method: "POST", body: JSON.stringify(data) }, token),
+
+  deleteMileageEntry: (token: string | null, userId: string, id: string) =>
+    request<void>(`/mileage/${userId}/${id}`, { method: "DELETE" }, token),
 
   getGoals: (token: string | null) => request<ApiGoal[]>("/goals", {}, token),
 
