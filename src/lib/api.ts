@@ -298,21 +298,20 @@ export const api = {
   deleteAttachment: (token: string | null, id: string) =>
     request<void>(`/attachments/${id}`, { method: "DELETE" }, token),
 
-  getMileageEntries: (token: string | null, userId: string, from: string, to: string) =>
+  getMyMileageEntries: (token: string | null, from: string, to: string) =>
     request<ApiMileageEntry[]>(
-      `/mileage/${userId}?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+      `/mileage/mine?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
       {},
       token,
     ),
 
   createMileageEntry: (
     token: string | null,
-    userId: string,
     data: { entryDate: string; kilometers: number; ratePerKm: number; note?: string },
-  ) => request<ApiMileageEntry>(`/mileage/${userId}`, { method: "POST", body: JSON.stringify(data) }, token),
+  ) => request<ApiMileageEntry>("/mileage/mine", { method: "POST", body: JSON.stringify(data) }, token),
 
-  deleteMileageEntry: (token: string | null, userId: string, id: string) =>
-    request<void>(`/mileage/${userId}/${id}`, { method: "DELETE" }, token),
+  deleteMileageEntry: (token: string | null, id: string) =>
+    request<void>(`/mileage/mine/${id}`, { method: "DELETE" }, token),
 
   getGoals: (token: string | null) => request<ApiGoal[]>("/goals", {}, token),
 
