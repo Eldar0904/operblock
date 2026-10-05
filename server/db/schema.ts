@@ -6,6 +6,7 @@ import {
   primaryKey,
   pgEnum,
   boolean,
+  date,
   integer,
   jsonb,
 } from "drizzle-orm/pg-core";
@@ -106,6 +107,16 @@ export const taskAttachments = pgTable("task_attachments", {
   sizeBytes: integer("size_bytes").notNull(),
   storageKey: text("storage_key").notNull(),
   uploadedByUserId: text("uploaded_by_user_id"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const mileageEntries = pgTable("mileage_entries", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id").notNull(),
+  entryDate: date("entry_date").notNull(),
+  kilometers: integer("kilometers").notNull(),
+  ratePerKm: integer("rate_per_km").notNull(),
+  note: text("note"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
